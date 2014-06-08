@@ -1,0 +1,21 @@
+{
+    "artifacts": {
+        "given": { "given": true },
+        "literal": 42,
+        "class": { "class": "Foo" },
+        "singleton_class": {
+            "class": "Foo",
+            "scope": "singleton"
+        },
+    },
+
+    "bags": {
+        "bag": {
+            "artifacts": {
+                "bag_class": {
+                    "class": "Foo"
+                }
+            }
+        }
+    }
+}
