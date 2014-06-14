@@ -72,6 +72,31 @@ sub _build_blueprint {
     );
 }
 
+has inference => (
+    is          => 'ro',
+    isa         => 'Object',
+    lazy_build  => 1,
+);
+
+sub _build_inference {
+    my $self = shift;
+
+    my $singleton = $self->scope->singleton;
+
+    return Injector::Bag->create(
+        package => 'Injector::Meta::Locator::Inference',
+        contents => {
+            moose => Injector::Artifact->new(
+                name      => 'moose',
+                blueprint => Injector::Blueprint::Factory->new(
+                    class => 'Injector::Inference::Moose',
+                ),
+                scope     => $singleton,
+            ),
+        },
+    );
+}
+
 has injector => (
     is          => 'ro',
     isa         => 'Object',
@@ -94,7 +119,6 @@ sub _build_injector {
     return Injector::Bag->create(
         package  => 'Injector::Meta::Locator::Injector',
         contents => {
-            _ => $parameter_name,
             parameter_name => $parameter_name,
             parameter_position => Injector::Artifact->new(
                 name      => 'parameter_position',

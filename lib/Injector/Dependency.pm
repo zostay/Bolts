@@ -3,15 +3,16 @@ use Moose;
 
 extends 'Injector::Parameter';
 
-has idref => (
-    is          => 'ro',
-    isa         => 'Str',
-);
+requires 'get_value';
 
-has ref => (
-    is          => 'ro',
-    isa         => 'Injector::Artifact',
-    weak_ref    => 1,
-);
+around get => sub {
+    my $next = shift;
+    my ($self, $bag, %params) = @_;
+
+    my $value = $self->get_value($bag);
+    $params{ $self->key } = $value;
+
+    return $self->$next($bag, %params);
+};
 
 __PACKAGE__->meta->make_immutable;

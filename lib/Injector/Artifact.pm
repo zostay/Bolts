@@ -1,6 +1,8 @@
 package Injector::Artifact;
 use Moose;
 
+with 'Injector::Role::Artifact';
+
 use Carp ();
 use Moose::Util::TypeConstraints;
 use Scalar::Util qw( weaken );
@@ -130,18 +132,24 @@ sub init_meta {
     $self->scope->init_meta($meta, $name);
 
     # Add the actual artifact factory method
-    $meta->add_method($name => sub {
-        my ($bag, %params) = @_;
-        $self->get($bag, %params);
-    });
+    $self->add_method($name => sub { $self });
+
+    # # Add the actual artifact factory method
+    # $meta->add_method($name => sub {
+    #     my ($bag, %params) = @_;
+    #     return $self->get($bag, %params);
+    # });
 }
 
 sub get {
-    my ($self, $bag, %params) = @_;
+    my ($self, $bag, %input_params) = @_;
     
     my $name      = $self->name;
     my $blueprint = $self->blueprint;
     my $scope     = $self->scope;
+
+    my $dependencies = $self->dependencies;
+    my $parameters   = $self->parameters;
 
     my $artifact;
 
@@ -151,9 +159,6 @@ sub get {
 
     # The scope does not have it, so load it again from blueprints
     if (not defined $artifact) {
-
-        # TODO Process dependencies and inject dependencies and paramters
-        # here.
 
         $artifact = $blueprint->get($bag, $name, %params);
 

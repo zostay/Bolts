@@ -1,6 +1,8 @@
 package Injector::Parameter;
 use Moose;
 
+use Carp ();
+
 has key => (
     is          => 'ro',
     isa         => 'Str|Int',
@@ -13,7 +15,7 @@ has inject_via => (
 );
 
 has isa => (
-    is          => 'ro',
+    reader      => 'isa_type',
     isa         => 'Moose::Meta::TypeConstraint',
 );
 
@@ -25,8 +27,28 @@ has optional => (
 );
 
 has does => (
-    is          => 'ro',
+    reader      => 'does_type',
     isa         => 'Moose::Meta::TypeConstraint::Role',
 );
+
+sub get {
+    my ($self, $bag, %params) = @_;
+
+    my $key = $self->key;
+
+    Carp::croak(qq[required parameter "$key" is missing])
+        unless $self->optional or defined $params{ $self->key };
+
+    my $value = $params{ $self->key };
+
+    my @constraints = grep { defined } ($self->isa_type, $self->does_type);
+    for my $constraint (@constraints) {
+        my $error = $constraint->validate($value);
+        Carp::croak(qq[parameter "$key" fails validation: $error])
+            if defined $error;
+    }
+
+    return $params{ $self->key };
+}
 
 __PACKAGE__->meta->make_immutable;

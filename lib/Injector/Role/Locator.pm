@@ -21,7 +21,13 @@ sub acquire {
     while (@path) {
         my $component = shift @path;
 
-        $item = $self->get($item, $component, $current_path);
+        my $bag = $item;
+        $item = $self->get($bag, $component, $current_path);
+
+        if ($item->$_does('Injector::Role::Artifact')) {
+            my $loc = $self->locator_for($bag);
+            $item = $item->get($loc, %$parameters);
+        }
 
         $current_path .= ' ' if $current_path;
         $current_path .= qq["$component"];
@@ -64,5 +70,19 @@ sub get {
         Carp::croak(qq{not able to acquire artifact for [$current_path "$component"]});
     }
 }
+
+sub locator_for {
+    my ($self, $bag) = @_;
+
+    if ($bag->$_does('Injector::Role::Locator')) {
+        return $bag;
+    }
+    else {
+        return Injector::Locator->new($bag);
+    }
+}
+
+# Get all in a bag
+sub acquire_all { ... }
 
 1;
