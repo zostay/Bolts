@@ -16,6 +16,8 @@ our @CARP_NOT = qw( Moose::Exporter );
 # Ugly, but so far... necessary...
 our $GLOBAL_FALLBACK_META_LOCATOR = 'Bolts::Meta::Locator';
 
+my @BAG_META;
+
 Moose::Exporter->setup_import_methods(
     class_metaroles => {
         class => [ 'Bolts::Meta::Class::Trait::Locator' ],
@@ -27,11 +29,20 @@ Moose::Exporter->setup_import_methods(
     also => 'Moose',
 );
 
+sub _bag_meta {
+    my ($meta) = @_;
+
+    $meta = $BAG_META[-1] if @BAG_META;
+
+    return $meta;
+}
+
+
 # TODO This sugar requires special knowledge of the built-in blueprint
 # types. It would be slick if this was not required. On the other hand, that
 # sounds like very deep magic and that might just be taking the magic too far.
 sub artifact {
-    my $meta = shift;
+    my $meta = _bag_meta(shift);
     my $name = shift;
 
     # No arguments means it's a given 
@@ -39,7 +50,7 @@ sub artifact {
     my %params;
     if (@_ == 0) {
         $blueprint_name = 'acquired';
-        $params{path}   = "__auto_$name";
+        $params{path}   = [ "__auto_$name" ];
         $meta->add_attribute("__auto_$name" =>
             is       => 'ro',
             init_arg => $name,
@@ -54,7 +65,7 @@ sub artifact {
 
     # Otherwise, we gotta figure out what it is...
     else {
-        my %params = @_;
+        %params = @_;
 
         # Is it an acquired?
         if (defined $params{path} && $params{path}) {
@@ -89,9 +100,10 @@ sub artifact {
     # TODO Remember the service for introspection
 
     my $scope_name = delete $params{scope} // '_';
+
     my $scope      = $meta->acquire('scope', $scope_name);
 
-    my $blueprint = $meta->acquire('blueprint', $blueprint_name, \%params);
+    my $blueprint  = $meta->acquire('blueprint', $blueprint_name, \%params);
 
     my $artifact = Bolts::Artifact->new(
         name         => $name,
@@ -99,25 +111,47 @@ sub artifact {
         scope        => $scope,
     );
 
-    # Setup the artifact factory method and any other accoutrements required
-    # by the blueprint or scope
-    $meta->add_method($name => sub { $artifact });
+    Bolts::Bag->add_item($meta, $name, $artifact);
+    return;
 }
 
+our @BAG_OF_BUILDING;
 sub bag {
-    my ($meta, $name, $def) = @_;
+    my ($meta, $name, $partial_def) = @_;
 
-    ...
+    $meta = _bag_meta($meta);
+
+    my $def = $partial_def->($name);
+    Bolts::Bag->add_item($meta, $name, sub { $def });
 }
 
 sub contains(&) {
-    my ($meta, $code) = @_;
+    my ($parent_meta, $code) = @_;
 
-    ...
+    my $meta = _bag_meta($parent_meta);
+
+    return sub {
+        my ($name) = shift;
+
+        my $parent = $meta->name;
+
+        my $bag_meta = Bolts::Bag->start(
+            package => "${parent}::$name",
+        );
+        push @BAG_META, $bag_meta;
+
+        $code->($bag_meta);
+
+        pop @BAG_META;
+
+        return Bolts::Bag->finish($bag_meta);
+    };
 }
 
 sub such_that_each(@) {
     my ($meta, %params) = @_;
+
+    $meta = _bag_meta($meta);
 
     ...
 }

@@ -25,13 +25,13 @@ sub builder {
     sub {
         my ($self, $bag, $name, @params) = @_;
 
-        my $path = $self->has_path ? $self->full_path : $name;
+        my @path = $self->has_path ? $self->full_path : $name;
         
         if ($self->has_locator) {
-            return $self->locator->acquire($path);
+            return $self->locator->acquire(@path);
         }
         else {
-            return locator_for($bag)->acquire($path);
+            return locator_for($bag)->acquire(@path);
         }
     };
 }

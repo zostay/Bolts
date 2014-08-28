@@ -4,6 +4,7 @@ use Moose;
 with qw( Bolts::Role::Locator );
 
 use Bolts::Artifact;
+use Bolts::Artifact::Thunk;
 use Bolts::Bag;
 
 use Bolts::Blueprint::Built;
@@ -16,10 +17,9 @@ use Bolts::Injector::Parameter::ByName;
 use Bolts::Scope::Prototype;
 use Bolts::Scope::Singleton;
 
-sub root { $_[0] }
+use Class::Load;
 
-# AKA Eating our own dog food, albeit without any sugar to make it go down
-# easier.
+sub root { $_[0] }
 
 has blueprint => (
     is          => 'ro',
@@ -30,62 +30,43 @@ has blueprint => (
 sub _build_blueprint {
     my $self = shift;
 
-    my $prototype = $self->scope->prototype->get($self->scope);
-
-    my $bp = Bolts::Bag->create(
+    my $bp = Bolts::Bag->create_or_reuse(
         package  => 'Bolts::Meta::Locator::Blueprint',
         contents => {
-            acquired => Bolts::Artifact->new(
-                name      => 'acquired',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Blueprint::Acquired',
-                ),
-                scope     => $prototype,
-                infer     => 'parameters',
+            acquired => Bolts::Artifact::Thunk->new(
+                thunk => sub {
+                    my ($self, $bag, %o) = @_;
+                    Class::Load::load_class('Bolts::Blueprint::Acquired');
+                    Bolts::Blueprint::Acquired->new(%o);
+                },
             ),
-            given => Bolts::Artifact->new(
-                name      => 'given',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Blueprint::Given',
-                ),
-                scope     => $prototype,
-                # infer     => 'parameters',
-                injectors => [
-                    Bolts::Injector::Parameter::ByName->new(
-                        key      => 'required',
-                        artifact => Bolts::Artifact->new(
-                            name => 'required',
-                            blueprint => Bolts::Blueprint::Given->new(
-                                required => 0,
-                            ),
-                            scope     => $prototype,
-                        ),
-                    ),
-                ],
+            given => Bolts::Artifact::Thunk->new(
+                thunk => sub {
+                    my ($self, $bag, %o) = @_;
+                    Class::Load::load_class('Bolts::Blueprint::Given');
+                    Bolts::Blueprint::Given->new(%o);
+                },
             ),
-            literal => Bolts::Artifact->new(
-                name      => 'literal',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Blueprint::Literal',
-                ),
-                scope     => $prototype,
-                infer     => 'parameters',
+            literal => Bolts::Artifact::Thunk->new(
+                thunk => sub {
+                    my ($self, $bag, %o) = @_;
+                    Class::Load::load_class('Bolts::Blueprint::Literal');
+                    Bolts::Blueprint::Literal->new(%o);
+                },
             ),
-            built => Bolts::Artifact->new(
-                name      => 'built',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Blueprint::Literal',
-                ),
-                scope     => $prototype,
-                infer     => 'parameters',
+            built => Bolts::Artifact::Thunk->new(
+                thunk => sub {
+                    my ($self, $bag, %o) = @_;
+                    Class::Load::load_class('Bolts::Blueprint::Built');
+                    Bolts::Blueprint::Built->new(%o);
+                },
             ),
-            factory => Bolts::Artifact->new(
-                name      => 'factory',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Blueprint::Factory',
-                ),
-                scope     => $prototype,
-                infer     => 'parameters',
+            factory => Bolts::Artifact::Thunk->new(
+                thunk => sub {
+                    my ($self, $bag, %o) = @_;
+                    Class::Load::load_class('Bolts::Blueprint::Factory');
+                    Bolts::Blueprint::Factory->new(%o);
+                },
             ),
         },
         such_that_each => {
@@ -188,7 +169,7 @@ sub _build_injector {
         ],
     );
 
-    return Bolts::Bag->create(
+    return Bolts::Bag->create_or_reuse(
         package  => 'Bolts::Meta::Locator::Injector',
         contents => {
             parameter_name => $parameter_name,
@@ -243,10 +224,10 @@ sub _build_scope {
         scope     => $singleton,
     );
 
-    return Bolts::Bag->create(
+    return Bolts::Bag->create_or_reuse(
         package  => 'Bolts::Meta::Locator::Scope',
         contents => {
-            _ => $prototype_artifact,
+            _         => $prototype_artifact,
             prototype => $prototype_artifact,
             singleton => Bolts::Artifact->new(
                 name      => 'singleton',
