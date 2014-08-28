@@ -10,8 +10,6 @@ has builder => (
     reader      => 'the_builder',
 );
 
-sub init_meta { }
-
 sub builder {
     my ($self) = @_;
 

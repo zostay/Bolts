@@ -12,20 +12,12 @@ has required => (
     default     => 0,
 );
 
-sub init_meta {
-    my ($self, $meta, $name) = @_;
-
-    $meta->add_attribute($name =>
-        accessor => "__bp_given_$name",
-        init_arg => $name,
-    );
-}
-
 sub builder { 
     sub {
-        my ($self, $bag, $name, @params) = @_;
-        my $get_given_value = "__bp_given_$name";
-        return $bag->$get_given_value;
+        my ($self, $bag, $name, %params) = @_;
+        use Data::Dumper;
+        warn 'ARTIFACT GIVEN: ', Dumper(\%params) if $name eq 'artifact';
+        return $params{ $name };
     };
 }
 

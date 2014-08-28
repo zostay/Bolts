@@ -13,6 +13,9 @@ use Bolts::Blueprint::Built;
 
 our @CARP_NOT = qw( Moose::Exporter );
 
+# Ugly, but so far... necessary...
+our $GLOBAL_FALLBACK_META_LOCATOR = 'Bolts::Meta::Locator';
+
 Moose::Exporter->setup_import_methods(
     class_metaroles => {
         class => [ 'Bolts::Meta::Class::Trait::Locator' ],
@@ -35,7 +38,12 @@ sub artifact {
     my $blueprint_name;
     my %params;
     if (@_ == 0) {
-        $blueprint_name = 'given';
+        $blueprint_name = 'acquired';
+        $params{path}   = "__auto_$name";
+        $meta->add_attribute("__auto_$name" =>
+            is       => 'ro',
+            init_arg => $name,
+        );
     }
 
     # One argument means it's a literal
@@ -48,9 +56,9 @@ sub artifact {
     else {
         my %params = @_;
 
-        # Is it a given?
-        if (defined $params{given} && $params{given}) {
-            $blueprint_name = 'given';
+        # Is it an acquired?
+        if (defined $params{path} && $params{path}) {
+            $blueprint_name = 'acquired';
         }
 
         # Is it a literal?
@@ -93,7 +101,7 @@ sub artifact {
 
     # Setup the artifact factory method and any other accoutrements required
     # by the blueprint or scope
-    $artifact->init_meta($meta, $name);
+    $meta->add_method($name => sub { $artifact });
 }
 
 sub bag {

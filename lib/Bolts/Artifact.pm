@@ -3,63 +3,16 @@ use Moose;
 
 with 'Bolts::Role::Artifact';
 
+use Bolts::Util qw( locator_for meta_locator_for );
 use Carp ();
+use List::MoreUtils qw( all );
 use Moose::Util::TypeConstraints;
+use Safe::Isa;
 use Scalar::Util qw( weaken );
 
-subtype 'Bolts::Parameter::List',
-     as 'ArrayRef[Bolts::Parameter]';
-
-subtype 'Bolts::Dependency::List',
-     as 'ArrayRef[Bolts::Dependency]';
-
-coerce 'Bolts::Parameter::List',
-  from 'HashRef[HashRef]',
-   via { 
-        my $h = $_;
-        map { 
-            Bolts::Parameter->new(
-                name => $_, 
-                %{ $h->{$_} },
-            ) 
-        } keys %$h;
-       };
-
-coerce 'Bolts::Parameter::List',
-  from 'ArrayRef[HashRef]',
-   via {
-        my $a = $_;
-        map { 
-            Bolts::Parameter->new(
-                position => $_,
-                %{ $a->[$_] },
-            )
-        } keys @$a;
-       };
-
-coerce 'Bolts::Dependency::List',
-  from 'HashRef[HashRef]',
-   via {
-        my $h = $_;
-        map { 
-            Bolts::Dependency->new(
-                name => $_, 
-                %{ $h->{$_} },
-            ) 
-        } keys %$h;
-       };
-
-coerce 'Bolts::Dependency::List',
-  from 'ArrayRef[HashRef]',
-   via {
-        my $a = $_;
-        map { 
-            Bolts::Dependency->new(
-                position => $_,
-                %{ $a->[$_] },
-            )
-        } keys @$a;
-       };
+subtype 'Bolts::Injector::List',
+     as 'ArrayRef',
+  where { all { $_->$_does('Bolts::Injector') } @$_ };
 
 has name => (
     is          => 'ro',
@@ -86,33 +39,105 @@ has infer => (
     default     => 'none',
 );
 
-has dependencies => (
-    is          => 'ro',
-    isa         => 'Bolts::Dependency::List',
+has inference_done => (
+    reader      => 'is_inference_done',
+    writer      => 'inference_is_done',
+    isa         => 'Bool',
     required    => 1,
-    coerce      => 1,
-    default     => sub { [] },
+    default     => 0,
+    init_arg    => undef,
 );
 
-has parameters => (
+has injectors => (
     is          => 'ro',
-    isa         => 'Bolts::Parameter::List',
+    isa         => 'Bolts::Injector::List',
     required    => 1,
-    coerce      => 1,
     default     => sub { [] },
+    traits      => [ 'Array' ],
+    handles     => {
+        all_injectors => 'elements',
+        add_injector  => 'push',
+    },
 );
 
-has must_do => (
-    is          => 'rw',
+has does => (
+    accessor    => 'does_type',
     isa         => 'Moose::Meta::TypeConstraint',
 );
 
-has must_be_a => (
-    is          => 'rw',
+has isa => (
+    accessor    => 'isa_type',
     isa         => 'Moose::Meta::TypeConstraint',
 );
 
 no Moose::Util::TypeConstraints;
+
+sub infer_injectors {
+    my ($self, $bag) = @_;
+
+    # use Data::Dumper;
+    # warn Dumper($self);
+    # $self->inference_is_done(1);
+
+    my $loc      = locator_for($bag);
+    my $meta_loc = meta_locator_for($bag);
+
+    # Use inferences to collect the list of injectors
+    if ($self->infer ne 'none') {
+        my $inference_type = $self->infer;
+
+        my $inferences = $meta_loc->acquire_all('inference');
+        my %injectors = map { $_->key => $_ } $self->all_injectors;
+
+        my @inferred_parameters;
+        for my $inference (@$inferences) {
+            push @inferred_parameters, 
+                $inference->infer($self->blueprint);
+        }
+
+        PARAMETER: for my $inferred (@inferred_parameters) {
+            my $key = $inferred->{key};
+
+            next PARAMETER if defined $injectors{ $key };
+
+            my %params = %$inferred;
+            my $required = delete $params{required};
+            my $via      = delete $params{inject_via};
+            my $isa      = delete $params{isa};
+            my $does     = delete $params{does};
+            my %artifact_params = (
+                name     => join(':', $self->name, $key),
+                scope    => $meta_loc->acquire('scope', 'prototype'),
+            );
+            $artifact_params{isa}  = $isa  if defined $isa;
+            $artifact_params{does} = $does if defined $does;
+
+            if ($inference_type eq 'parameters') {
+                $artifact_params{blueprint} = $meta_loc->acquire('blueprint', 'given', { 
+                    required => $required,
+                });
+            }
+            else {
+                $artifact_params{blueprint} = $meta_loc->acquire('blueprint', 'acquired', {
+                    locator => $loc,
+                    path    => [ $key ],
+                });
+            }
+
+            $params{artifact} = Bolts::Artifact->new(%artifact_params);
+            use Data::Dumper;
+            warn Dumper($params{artifact});
+
+            my $injector = $meta_loc->acquire('injector', $via, \%params);
+            unless (defined $injector) {
+                Carp::carp(qq[Unable to acquire an injector for "$via".]);
+                next PARAMETER;
+            }
+                
+            $self->add_injector($injector);
+        }
+    }
+}
 
 sub such_that {
     my ($self, $such_that) = @_;
@@ -121,35 +146,34 @@ sub such_that {
     # set. Maybe make sure the new things are compatible with the old? Maybe
     # setup a type union? Maybe croak? Maybe just carp? I don't know.
 
-    $self->must_do($such_that->{does})  if defined $such_that->{does};
-    $self->must_be_a($such_that->{isa}) if defined $such_that->{isa};
+    $self->does_type($such_that->{does}) if defined $such_that->{does};
+    $self->isa_type($such_that->{isa})   if defined $such_that->{isa};
 }
 
-sub init_meta {
-    my ($self, $meta, $name) = @_;
-
-    $self->blueprint->init_meta($meta, $name);
-    $self->scope->init_meta($meta, $name);
-
-    # Add the actual artifact factory method
-    $self->add_method($name => sub { $self });
-
-    # # Add the actual artifact factory method
-    # $meta->add_method($name => sub {
-    #     my ($bag, %params) = @_;
-    #     return $self->get($bag, %params);
-    # });
-}
+# sub init_meta {
+#     my ($self, $meta, $name) = @_;
+# 
+#     $self->blueprint->init_meta($meta, $name);
+#     $self->scope->init_meta($meta, $name);
+# 
+#     # Add the actual artifact factory method
+#     $meta->add_method($name => sub { $self });
+# 
+#     # # Add the actual artifact factory method
+#     # $meta->add_method($name => sub {
+#     #     my ($bag, %params) = @_;
+#     #     return $self->get($bag, %params);
+#     # });
+# }
 
 sub get {
     my ($self, $bag, %input_params) = @_;
+
+    $self->infer_injectors($bag) unless $self->is_inference_done;
     
     my $name      = $self->name;
     my $blueprint = $self->blueprint;
     my $scope     = $self->scope;
-
-    my $dependencies = $self->dependencies;
-    my $parameters   = $self->parameters;
 
     my $artifact;
 
@@ -160,13 +184,25 @@ sub get {
     # The scope does not have it, so load it again from blueprints
     if (not defined $artifact) {
 
-        $artifact = $blueprint->get($bag, $name, %params);
+        my %bp_params;
+        for my $injector ($self->all_injectors) {
+            $injector->pre_inject($bag, %input_params, %bp_params);
+        }
 
-        Carp::croak("unable to build artifact $name from blueprint")
-            unless defined $artifact;
+        use Data::Dumper;
+        warn "$name ", Dumper(\%bp_params);
+        $artifact = $blueprint->get($bag, $name, %bp_params);
+
+        for my $injector ($self->all_injectors) {
+            $injector->post_inject($bag, %input_params, $artifact);
+        }
+
+        # Carp::croak("unable to build artifact $name from blueprint")
+        #     unless defined $artifact;
 
         # Add the item into the scope for possible reuse from cache
-        $scope->put($bag, $name, $artifact);
+        $scope->put($bag, $name, $artifact)
+            unless $blueprint->implied_scope;
     }
 
     # TODO This would be a much more helpful check to apply ahead of time in
@@ -174,10 +210,10 @@ sub get {
     # blueprints to be handled when such checks can be sensibly handled
     # ahead of time.
 
-    my $isa = $self->must_be_a;
+    my $isa = $self->isa_type;
     $isa->assert_valid($artifact) if defined $isa;
 
-    my $does = $self->must_do;
+    my $does = $self->does_type;
     $does->assert_valid($artifact) if defined $does;
 
     return $artifact;

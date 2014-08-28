@@ -18,8 +18,6 @@ has method => (
     default     => 'new',
 );
 
-sub init_meta { }
-
 sub builder {
     my ($self) = @_;
 

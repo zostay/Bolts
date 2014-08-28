@@ -11,6 +11,8 @@ use Bolts::Blueprint::Factory;
 use Bolts::Blueprint::Given;
 use Bolts::Blueprint::Literal;
 
+use Bolts::Injector::Parameter::ByName;
+
 use Bolts::Scope::Prototype;
 use Bolts::Scope::Singleton;
 
@@ -28,18 +30,38 @@ has blueprint => (
 sub _build_blueprint {
     my $self = shift;
 
-    my $prototype = $self->scope->prototype;
+    my $prototype = $self->scope->prototype->get($self->scope);
 
-    return Bolts::Bag->create(
+    my $bp = Bolts::Bag->create(
         package  => 'Bolts::Meta::Locator::Blueprint',
         contents => {
+            acquired => Bolts::Artifact->new(
+                name      => 'acquired',
+                blueprint => Bolts::Blueprint::Factory->new(
+                    class => 'Bolts::Blueprint::Acquired',
+                ),
+                scope     => $prototype,
+                infer     => 'parameters',
+            ),
             given => Bolts::Artifact->new(
                 name      => 'given',
                 blueprint => Bolts::Blueprint::Factory->new(
                     class => 'Bolts::Blueprint::Given',
                 ),
                 scope     => $prototype,
-                infer     => 'parameters',
+                # infer     => 'parameters',
+                injectors => [
+                    Bolts::Injector::Parameter::ByName->new(
+                        key      => 'required',
+                        artifact => Bolts::Artifact->new(
+                            name => 'required',
+                            blueprint => Bolts::Blueprint::Given->new(
+                                required => 0,
+                            ),
+                            scope     => $prototype,
+                        ),
+                    ),
+                ],
             ),
             literal => Bolts::Artifact->new(
                 name      => 'literal',
@@ -70,31 +92,29 @@ sub _build_blueprint {
             does => 'Bolts::Blueprint',
         },
     );
+    return $bp;
 }
 
 has inference => (
     is          => 'ro',
-    isa         => 'Object',
+    isa         => 'ArrayRef',
     lazy_build  => 1,
 );
 
 sub _build_inference {
     my $self = shift;
 
-    my $singleton = $self->scope->singleton;
+    my $singleton = $self->scope->singleton->get($self->scope);
 
-    return Bolts::Bag->create(
-        package => 'Bolts::Meta::Locator::Inference',
-        contents => {
-            moose => Bolts::Artifact->new(
-                name      => 'moose',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Inference::Moose',
-                ),
-                scope     => $singleton,
+    return [
+        Bolts::Artifact->new(
+            name      => 'moose',
+            blueprint => Bolts::Blueprint::Factory->new(
+                class => 'Bolts::Inference::Moose',
             ),
-        },
-    );
+            scope     => $singleton,
+        ),
+    ];
 }
 
 has injector => (
@@ -106,14 +126,66 @@ has injector => (
 sub _build_injector {
     my $self = shift;
 
-    my $singleton = $self->scope->singleton;
+    my $singleton = $self->scope->singleton->get($self->scope);
 
     my $parameter_name = Bolts::Artifact->new(
         name      => 'parameter_name',
         blueprint => Bolts::Blueprint::Factory->new(
-            class => 'Bolts::Injector::ParameterName',
+            class => 'Bolts::Injector::Parameter::ByName',
         ),
         scope     => $singleton,
+        injectors => [
+            Bolts::Injector::Parameter::ByName->new(
+                key      => 'key',
+                artifact => Bolts::Artifact->new(
+                    name => 'key',
+                    blueprint => Bolts::Blueprint::Given->new(
+                        required => 1,
+                    ),
+                    scope     => $singleton,
+                ),
+            ),
+            Bolts::Injector::Parameter::ByName->new(
+                key      => 'artifact',
+                artifact => Bolts::Artifact->new(
+                    name => 'artifact',
+                    blueprint => Bolts::Blueprint::Given->new(
+                        required => 1,
+                    ),
+                    scope     => $singleton,
+                ),
+            ),
+            Bolts::Injector::Parameter::ByName->new(
+                key      => 'does',
+                artifact => Bolts::Artifact->new(
+                    name => 'does',
+                    blueprint => Bolts::Blueprint::Given->new(
+                        required => 0,
+                    ),
+                    scope     => $singleton,
+                ),
+            ),
+            Bolts::Injector::Parameter::ByName->new(
+                key      => 'isa',
+                artifact => Bolts::Artifact->new(
+                    name => 'isa',
+                    blueprint => Bolts::Blueprint::Given->new(
+                        required => 0,
+                    ),
+                    scope     => $singleton,
+                ),
+            ),
+            Bolts::Injector::Parameter::ByName->new(
+                key      => 'name',
+                artifact => Bolts::Artifact->new(
+                    name => 'name',
+                    blueprint => Bolts::Blueprint::Given->new(
+                        required => 0,
+                    ),
+                    scope     => $singleton,
+                ),
+            ),
+        ],
     );
 
     return Bolts::Bag->create(
@@ -123,15 +195,17 @@ sub _build_injector {
             parameter_position => Bolts::Artifact->new(
                 name      => 'parameter_position',
                 blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Injector::ParameterPosition',
+                    class => 'Bolts::Injector::Parameter::ByPosition',
                 ),
+                infer     => 'parameters',
                 scope     => $singleton,
             ),
             setter => Bolts::Artifact->new(
                 name      => 'setter',
                 blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Injector::ParameterPosition',
+                    class => 'Bolts::Injector::Parameter::ByPosition',
                 ),
+                infer     => 'parameters',
                 scope     => $singleton,
             ),
             store => Bolts::Artifact->new(
@@ -139,6 +213,7 @@ sub _build_injector {
                 blueprint => Bolts::Blueprint::Factory->new(
                     class => 'Bolts::Injector::Store',
                 ),
+                infer     => 'parameters',
                 scope     => $singleton,
             ),
         },

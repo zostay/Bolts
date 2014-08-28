@@ -7,7 +7,7 @@ has root => (
     required    => 1,
 );
 
-wtih 'Bolts::Role::Locator';
+with 'Bolts::Role::Locator';
 
 override BUILDARGS => sub {
     my $class = shift;
@@ -18,6 +18,6 @@ override BUILDARGS => sub {
     else {
         return super();
     }
-}
+};
 
 __PACKAGE__->meta->make_immutable;

@@ -1,29 +1,26 @@
 package Bolts::Scope::Singleton;
 use Moose;
 
+use Hash::Util::FieldHash 'fieldhash';
+
 with 'Bolts::Scope';
 
-sub init_meta {
-    my ($self, $meta, $name) = @_;
-
-    $meta->add_attribute($name =>
-        accessor => "__sc_singleton_$name",
-        init_arg => undef,
-    );
-}
+fieldhash my %singleton;
 
 sub get {
     my ($self, $bag, $name) = @_;
 
-    my $get_instance = "__sc_singleton_$name";
-    return $bag->get_instance;
+    return unless defined $singleton{$bag};
+    return unless defined $singleton{$bag}{$name};
+    return $singleton{$bag}{$name};
 }
 
 sub put {
-    my ($self, $bag, $name) = @_;
+    my ($self, $bag, $name, $artifact) = @_;
 
-    my $put_instance = "__sc_singleton_$name";
-    return $bag->$put_instance;
+    $singleton{$bag} = {} unless defined $singleton{$bag};
+    $singleton{$bag}{$name} = $artifact;
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;

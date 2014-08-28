@@ -22,9 +22,9 @@ use Test::More tests => 17;
 
 {
     package Artifacts;
-    use Injector::Locator;
-
-    artifact 'given';
+    use Bolts;
+    
+    artifact 'acquired';
 
     artifact literal => 42;
 
@@ -46,11 +46,12 @@ use Test::More tests => 17;
     __PACKAGE__->meta->make_immutable;
 }
 
-my $locator = Artifacts->new( given => 'something' );;
+my $locator = Artifacts->new( acquired => 'something' );;
+diag explain $locator;
 ok($locator);
 
 # Via attribute accessor
-is($locator->given, 'something');
+is($locator->acquired, 'something');
 is($locator->literal, 42);
 is($locator->class->id, 1);
 is($locator->class->id, 2);

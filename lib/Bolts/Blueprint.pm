@@ -18,9 +18,11 @@ has factory => (
     },
 );
 
-requires 'init_meta';
+# requires 'init_meta';
 requires 'builder';
 # requires 'inline_get';
+
+sub init_meta { }
 
 sub implied_scope { }
 

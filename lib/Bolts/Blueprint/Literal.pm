@@ -10,8 +10,6 @@ has value => (
     required    => 1,
 );
 
-sub init_meta { }
-
 sub builder {
     my ($self) = @_;
 
@@ -20,4 +18,5 @@ sub builder {
 }
 
 sub implied_scope { 'singleton' }
+
 __PACKAGE__->meta->make_immutable;

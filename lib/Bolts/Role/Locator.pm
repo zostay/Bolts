@@ -1,16 +1,27 @@
 package Bolts::Role::Locator;
 use Moose::Role;
 
+use Bolts::Locator;
+use Bolts::Util;
 use Carp ();
 use Safe::Isa;
 use Scalar::Util ();
 
 requires 'root';
 
+sub resolve {
+    my ($self, $bag, $item, $parameters) = @_;
+
+    return $item->get($bag, %$parameters)
+        if $item->$_does('Bolts::Role::Artifact');
+
+    return $item;
+}
+
 sub acquire {
     my ($self, @path) = @_;
 
-    my $parameters;
+    my $parameters = {};
     if (@path > 1 and ref $path[-1]) {
         $parameters = pop @path;
     }
@@ -23,11 +34,7 @@ sub acquire {
 
         my $bag = $item;
         $item = $self->get($bag, $component, $current_path);
-
-        if ($item->$_does('Bolts::Role::Artifact')) {
-            my $loc = $self->locator_for($bag);
-            $item = $item->get($loc, %$parameters);
-        }
+        $item = $self->resolve($bag, $item, $parameters);
 
         $current_path .= ' ' if $current_path;
         $current_path .= qq["$component"];
@@ -71,18 +78,24 @@ sub get {
     }
 }
 
-sub locator_for {
-    my ($self, $bag) = @_;
+sub acquire_all {
+    my ($self, @path) = @_;
 
-    if ($bag->$_does('Bolts::Role::Locator')) {
-        return $bag;
+    my $parameters = {};
+    if (@path > 1 and ref $path[-1]) {
+        $parameters = pop @path;
     }
+    
+    my $bag = $self->acquire(@path);
+    if (ref $bag eq 'ARRAY') {
+        return [
+            map { $self->resolve($bag, $_, $parameters) } @$bag
+        ];
+    }
+
     else {
-        return Bolts::Locator->new($bag);
+        return [];
     }
 }
-
-# Get all in a bag
-sub acquire_all { ... }
 
 1;
