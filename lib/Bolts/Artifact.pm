@@ -1,4 +1,7 @@
 package Bolts::Artifact;
+
+# ABSTRACT: Tools for resolving an artifact value
+
 use Moose;
 
 with 'Bolts::Role::Artifact';
