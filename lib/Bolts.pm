@@ -114,6 +114,57 @@ One of the goals of this system is to have the system rely on the IOC internally
 
 All the various components: artifact, bag, locator, blueprint, injector, scope, and inferer are completely extensible. You can create new versions of L<Bolts::Role::Artifact>. You can create bags from almost anything. You can create new locators via L<Bolts::Role::Locator>. You can create new blueprints via L<Bolts::Blueprint>. You can create new scopes via L<Bolts::Scope>. You can create new inferers via L<Bolts::Inferer>. You can then associate these components with the internals using L<Bolts::Meta::Locator>.
 
+=head1 THIS CLASS
+
+The purpose of the Bolts module itself is to provide some nice syntactic sugar for turning the class that uses it into a bag and locator.
+
+=head1 FUNCTIONS
+
+=head2 artifact
+
+    artifact 'name';
+    artifact name => $value;
+    artifact name => %options;
+
+This defines an artifact in the current class. This will create a method on the current object with the given "name". If only the name is given, then the artifact to use must be passed when the bag is constructed.
+
+    # for example, if you bag is named "MyApp"
+    my $bag = MyApp->new( name => 42 );
+    my $value = $bag->acquire('name');
+    say $value; # 42
+
+If a scalar or reference is passed in as a single argument in addition to the name, the artifact will be set to that literal value.
+
+Otherwise, you may pass in a list of pairs, which will be interpreted depending on the keys present. Here is a list of keys and their meanings:
+
+=over
+
+=item path
+
+This is like an alias to an artifact elsewhere within this bag or in another bag (if "locator" is passed as well). It is set to a reference to an array of names, naming the path within the bag to acquire. See L<Bolts::Blueprint::Acquired> for details.
+
+=item value
+
+This sets the artifact to a literal value, similar to passing C<$value> in the example above. See L<Bolts::Blueprint::Literal> for details.
+
+=item class
+
+This should be set to a package name. This causes the artifact to construct and return the value from a factory method or constructor. See L<Bolts::Blueprint::Factory> for details.
+
+=item builder
+
+This should be set to a subroutine. The subroutine will be called to attain this artifact and the return value used as the artifact. See L<Bolts::Blueprint::Builder> for details.
+
+=item blueprint
+
+This is set to the name of a L<Bolts::Blueprint> definition and allows you to specify the blueprint you wish to use directly.
+
+=item scope
+
+In addition to the options above, you may also specify the scope. This is usually either "prototype" or "singleton" and the default is generally "prototype".
+
+=back
+
 =cut
 
 # TODO This sugar requires special knowledge of the built-in blueprint
@@ -145,8 +196,13 @@ sub artifact {
     else {
         %params = @_;
 
+        # Is the service class named?
+        if (defined $params{blueprint}) {
+            $blueprint_name = delete $params{blueprint};
+        }
+
         # Is it an acquired?
-        if (defined $params{path} && $params{path}) {
+        elsif (defined $params{path} && $params{path}) {
             $blueprint_name = 'acquired';
         }
 
@@ -163,11 +219,6 @@ sub artifact {
         # Is it a builder blueprint?
         elsif (defined $params{builder}) {
             $blueprint_name = 'built';
-        }
-
-        # Is the service class named?
-        elsif (defined $params{blueprint}) {
-            $blueprint_name = delete $params{blueprint};
         }
 
         else {
@@ -192,6 +243,16 @@ sub artifact {
     Bolts::Bag->add_item($meta, $name, $artifact);
     return;
 }
+
+=head2 bag
+
+    bag 'name' => contains {
+        artifact 'child_name' => 42;
+    };
+
+Attaches a bag at the named location. This provides tools for assembling complex IOC configurations.
+
+=cut
 
 our @BAG_OF_BUILDING;
 sub bag {
