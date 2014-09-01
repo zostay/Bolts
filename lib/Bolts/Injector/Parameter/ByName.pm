@@ -19,9 +19,6 @@ sub pre_inject {
     Carp::croak('You cannot mix parameters by position and by name.')
         if defined ${ $out_params }
        and (not defined ref ${ $out_params } or ref ${ $out_params } ne 'HASH');
-    use Data::Dumper;
-    warn Dumper(\%in_params);
-    warn "injecting @{[$self->name]} <- $value\n";
     ${ $out_params } //= {};
     ${ $out_params }->{ $self->name } = $value;
 }

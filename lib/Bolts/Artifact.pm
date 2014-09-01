@@ -128,8 +128,6 @@ sub infer_injectors {
             }
 
             $params{artifact} = Bolts::Artifact->new(%artifact_params);
-            use Data::Dumper;
-            warn Dumper($params{artifact});
 
             my $injector = $meta_loc->acquire('injector', $via, \%params);
             unless (defined $injector) {
@@ -192,8 +190,6 @@ sub get {
             $injector->pre_inject($bag, %input_params, %bp_params);
         }
 
-        use Data::Dumper;
-        warn "$name ", Dumper(\%bp_params);
         $artifact = $blueprint->get($bag, $name, %bp_params);
 
         for my $injector ($self->all_injectors) {

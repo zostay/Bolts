@@ -15,8 +15,6 @@ has required => (
 sub builder { 
     sub {
         my ($self, $bag, $name, %params) = @_;
-        use Data::Dumper;
-        warn 'ARTIFACT GIVEN: ', Dumper(\%params) if $name eq 'artifact';
         return $params{ $name };
     };
 }

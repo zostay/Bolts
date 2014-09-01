@@ -30,8 +30,6 @@ sub get {
     my ($self, $loc, %params) = @_;
 
     my $artifact = $self->artifact;
-    use Data::Dumper;
-    warn Dumper($artifact) if $artifact->name eq 'artifact';
     $artifact->such_that({
         does => $self->does_type,
         isa  => $self->isa_type,
