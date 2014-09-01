@@ -22,18 +22,16 @@ has path => (
 );
 
 sub builder {
-    sub {
-        my ($self, $bag, $name, @params) = @_;
+    my ($self, $bag, $name, @params) = @_;
 
-        my @path = $self->has_path ? $self->full_path : $name;
-        
-        if ($self->has_locator) {
-            return $self->locator->acquire(@path);
-        }
-        else {
-            return locator_for($bag)->acquire(@path);
-        }
-    };
+    my @path = $self->has_path ? $self->full_path : $name;
+    
+    if ($self->has_locator) {
+        return $self->locator->acquire(@path);
+    }
+    else {
+        return locator_for($bag)->acquire(@path);
+    }
 }
 
 __PACKAGE__->meta->make_immutable;

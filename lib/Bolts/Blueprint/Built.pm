@@ -8,16 +8,15 @@ use Carp ();
 has builder => (
     isa         => 'CodeRef',
     reader      => 'the_builder',
+    traits      => [ 'Code' ],
+    handles     => {
+        'call_builder' => 'execute_method',
+    },
 );
 
 sub builder {
-    my ($self) = @_;
-
-    my $builder = $self->the_builder;
-    return sub {
-        my ($self, $bag, $name, @params) = @_;
-        $builder->($bag, @params);
-    };
+    my ($self, $bag, $name, @params) = @_;
+    $self->call_builder($bag, @params);
 }
 
 __PACKAGE__->meta->make_immutable;

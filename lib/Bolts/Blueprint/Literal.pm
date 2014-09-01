@@ -12,9 +12,7 @@ has value => (
 
 sub builder {
     my ($self) = @_;
-
-    my $value = $self->value;
-    sub { $value };
+    $self->value;
 }
 
 sub implied_scope { 'singleton' }

@@ -19,18 +19,14 @@ has method => (
 );
 
 sub builder {
-    my ($self) = @_;
+    my ($self, $bag, $name, @params) = @_;
 
     my $class = $self->class;
     my $method = $self->method;
 
-    sub {
-        my ($self, $bag, $name, @params) = @_;
+    Class::Load::load_class($class);
 
-        Class::Load::load_class($class);
-
-        return $class->$method(@params);
-    };
+    return $class->$method(@params);
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -13,10 +13,14 @@ has required => (
 );
 
 sub builder { 
-    sub {
-        my ($self, $bag, $name, %params) = @_;
-        return $params{ $name };
-    };
+    my ($self, $bag, $name, %params) = @_;
+
+    Carp::croak("Missing required parameter $name")
+        if $self->required and not exists $params{ $name };
+
+    return unless exists $params{ $name };
+
+    return $params{ $name };
 }
 
 # sub inline_get {
