@@ -30,7 +30,7 @@ Moose::Exporter->setup_import_methods(
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
     with_meta => [ qw(
-        artifact bag builder contains dep such_that_each
+        artifact bag builder contains dep parameter such_that_each
     ) ],
     also => 'Moose',
 );
@@ -357,12 +357,18 @@ sub builder(&) {
 }
 
 sub dep($) {
-    my ($meta, $path) = @_;
+    my ($meta, @path) = @_;
     $meta = _bag_meta($meta);
 
     return $meta->acquire('blueprint', 'acquired', {
-        path => $path,
+        path => \@path,
     });
+}
+
+sub parameter($) {
+    my ($meta, $param) = @_;
+
+    return $meta->acquire('blueprint', 'given', $param);
 }
 
 1;
