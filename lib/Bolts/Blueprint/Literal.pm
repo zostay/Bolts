@@ -1,7 +1,8 @@
 package Bolts::Blueprint::Literal;
+
 use Moose;
 
-with 'Bolts::Blueprint';
+with 'Bolts::Blueprint::Role::Injector';
 
 use Carp ();
 

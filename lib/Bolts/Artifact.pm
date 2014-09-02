@@ -98,6 +98,9 @@ sub infer_injectors {
                 $inference->infer($self->blueprint);
         }
 
+        # use Data::Dumper;
+        # warn 'INFERRED: ', Dumper(\@inferred_parameters);
+
         PARAMETER: for my $inferred (@inferred_parameters) {
             my $key = $inferred->{key};
 
@@ -106,28 +109,21 @@ sub infer_injectors {
             my %params = %$inferred;
             my $required = delete $params{required};
             my $via      = delete $params{inject_via};
-            my $isa      = delete $params{isa};
-            my $does     = delete $params{does};
-            my %artifact_params = (
-                name     => join(':', $self->name, $key),
-                scope    => $meta_loc->acquire('scope', 'prototype'),
-            );
-            $artifact_params{isa}  = $isa  if defined $isa;
-            $artifact_params{does} = $does if defined $does;
 
+            my $blueprint;
             if ($inference_type eq 'parameters') {
-                $artifact_params{blueprint} = $meta_loc->acquire('blueprint', 'given', { 
+                $blueprint = $meta_loc->acquire('blueprint', 'given', { 
                     required => $required,
                 });
             }
             else {
-                $artifact_params{blueprint} = $meta_loc->acquire('blueprint', 'acquired', {
+                $blueprint = $meta_loc->acquire('blueprint', 'acquired', {
                     locator => $loc,
                     path    => [ $key ],
                 });
             }
 
-            $params{artifact} = Bolts::Artifact->new(%artifact_params);
+            $params{blueprint} = $blueprint;
 
             my $injector = $meta_loc->acquire('injector', $via, \%params);
             unless (defined $injector) {
@@ -171,7 +167,7 @@ sub get {
     my ($self, $bag, %input_params) = @_;
 
     $self->infer_injectors($bag) unless $self->is_inference_done;
-    
+
     my $name      = $self->name;
     my $blueprint = $self->blueprint;
     my $scope     = $self->scope;
@@ -185,15 +181,15 @@ sub get {
     # The scope does not have it, so load it again from blueprints
     if (not defined $artifact) {
 
-        my %bp_params;
+        my @bp_params;
         for my $injector ($self->all_injectors) {
-            $injector->pre_inject($bag, %input_params, %bp_params);
+            $injector->pre_inject($bag, \%input_params, \@bp_params);
         }
 
-        $artifact = $blueprint->get($bag, $name, %bp_params);
+        $artifact = $blueprint->get($bag, $name, @bp_params);
 
         for my $injector ($self->all_injectors) {
-            $injector->post_inject($bag, %input_params, $artifact);
+            $injector->post_inject($bag, \%input_params, $artifact);
         }
 
         # Carp::croak("unable to build artifact $name from blueprint")

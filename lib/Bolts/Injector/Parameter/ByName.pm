@@ -9,18 +9,23 @@ has name => (
     lazy_build  => 1,
 );
 
+has skip_undef => (
+    is          => 'ro',
+    isa         => 'Bool',
+    required    => 1,
+    default     => 1,
+);
+
 sub _build_name { $_[0]->key }
 
 sub pre_inject {
-    my ($self, $loc, %in_params, $out_params) = @_;
+    my ($self, $loc, $in_params, $out_params) = @_;
 
-    my $value = $self->get($loc, %in_params);
+    my $value = $self->get($loc, $in_params);
 
-    Carp::croak('You cannot mix parameters by position and by name.')
-        if defined ${ $out_params }
-       and (not defined ref ${ $out_params } or ref ${ $out_params } ne 'HASH');
-    ${ $out_params } //= {};
-    ${ $out_params }->{ $self->name } = $value;
+    return if $self->skip_undef and not defined $value;
+
+    push @{ $out_params }, $self->name, $value;
 }
 
 sub post_inject { }

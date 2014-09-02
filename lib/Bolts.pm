@@ -10,9 +10,12 @@ use Moose::Util::MetaRole ();
 use Scalar::Util ();
 use Carp ();
 
+use Bolts::Util qw( locator_for );
 use Bolts::Blueprint::Given;
 use Bolts::Blueprint::Literal;
 use Bolts::Blueprint::Built;
+
+use Safe::Isa;
 
 our @CARP_NOT = qw( Moose::Exporter );
 
@@ -27,7 +30,7 @@ Moose::Exporter->setup_import_methods(
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
     with_meta => [ qw(
-        artifact bag contains such_that_each
+        artifact bag builder contains dep such_that_each
     ) ],
     also => 'Moose',
 );
@@ -226,9 +229,56 @@ sub artifact {
         }
     }
 
+    my @injectors;
+    if (defined $params{dependencies}) {
+        my $dependencies = delete $params{dependencies};
+
+        if ($dependencies->$_does('Bolts::Blueprint')) {
+            Carp::croak("invalid blueprint in dependencies")
+                unless defined $dependencies and $dependencies->$_does('Bolts::Blueprint::Role::Injector');
+            push @injectors,
+                $meta->acquire('injector', 'parameter_position', {
+                    key       => '0',
+                    blueprint => $dependencies,
+                }),
+        }
+        elsif (ref $dependencies eq 'HASH') {
+            for my $key (keys %$dependencies) {
+                my $blueprint = $dependencies->{$key};
+
+                Carp::croak("invalid blueprint in dependencies $key")
+                    unless defined $blueprint and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
+
+                push @injectors, 
+                    $meta->acquire('injector', 'parameter_name', {
+                        key       => $key,
+                        blueprint => $blueprint,
+                    });
+            }
+        }
+        elsif (ref $dependencies eq 'ARRAY') {
+            my $key = 0;
+            for my $blueprint (@$dependencies) {
+
+                Carp::croak("invalid blueprint in dependencies $key")
+                    unless defined $blueprint and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
+
+                push @injectors, 
+                    $meta->acquire('injector', 'parameter_position', {
+                        key       => $key++,
+                        blueprint => $blueprint,
+                    });
+            }
+        }
+        else {
+            Carp::croak("dependencies must be a blueprint, an array of blueprints, or a hash with blueprint values");
+        }
+    }
+
     # TODO Remember the service for introspection
 
     my $scope_name = delete $params{scope} // '_';
+    my $infer      = delete $params{infer} // 'none';
 
     my $scope      = $meta->acquire('scope', $scope_name);
 
@@ -238,6 +288,8 @@ sub artifact {
         name         => $name,
         blueprint    => $blueprint,
         scope        => $scope,
+        infer        => $infer,
+        injectors    => \@injectors,
     );
 
     Bolts::Bag->add_item($meta, $name, $artifact);
@@ -293,6 +345,24 @@ sub such_that_each(@) {
     $meta = _bag_meta($meta);
 
     ...
+}
+
+sub builder(&) {
+    my ($meta, $code) = @_;
+    $meta = _bag_meta($meta);
+
+    return $meta->acquire('blueprint', 'built_injector', {
+        builder => $code,
+    });
+}
+
+sub dep($) {
+    my ($meta, $path) = @_;
+    $meta = _bag_meta($meta);
+
+    return $meta->acquire('blueprint', 'acquired', {
+        path => $path,
+    });
 }
 
 1;

@@ -1,7 +1,7 @@
 package Bolts::Blueprint::Given;
 use Moose;
 
-with 'Bolts::Blueprint';
+with 'Bolts::Blueprint::Role::Injector';
 
 use Carp ();
 

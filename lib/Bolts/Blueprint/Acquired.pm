@@ -1,7 +1,7 @@
 package Bolts::Blueprint::Acquired;
 use Moose;
 
-with 'Bolts::Blueprint';
+with 'Bolts::Blueprint::Role::Injector';
 
 use Bolts::Util qw( locator_for );
 
@@ -21,8 +21,10 @@ has path => (
     },
 );
 
+sub has_value { 1 }
+
 sub builder {
-    my ($self, $bag, $name, @params) = @_;
+    my ($self, $bag, $name) = @_;
 
     my @path = $self->has_path ? $self->full_path : $name;
     

@@ -61,6 +61,13 @@ sub _build_blueprint {
                     Bolts::Blueprint::Built->new(%o);
                 },
             ),
+            built_injector => Bolts::Artifact::Thunk->new(
+                thunk => sub {
+                    my ($self, $bag, %o) = @_;
+                    Class::Load::load_class('Bolts::Blueprint::BuiltInjector');
+                    Bolts::Blueprint::BuiltInjector->new(%o);
+                },
+            ),
             factory => Bolts::Artifact::Thunk->new(
                 thunk => sub {
                     my ($self, $bag, %o) = @_;
@@ -107,63 +114,43 @@ has injector => (
 sub _build_injector {
     my $self = shift;
 
-    my $singleton = $self->scope->singleton->get($self->scope);
+    my $prototype = $self->scope->prototype->get($self->scope);
 
     my $parameter_name = Bolts::Artifact->new(
         name      => 'parameter_name',
         blueprint => Bolts::Blueprint::Factory->new(
             class => 'Bolts::Injector::Parameter::ByName',
         ),
-        scope     => $singleton,
+        scope     => $prototype,
         injectors => [
             Bolts::Injector::Parameter::ByName->new(
                 key      => 'key',
-                artifact => Bolts::Artifact->new(
-                    name => 'key',
-                    blueprint => Bolts::Blueprint::Given->new(
-                        required => 1,
-                    ),
-                    scope     => $singleton,
+                blueprint => Bolts::Blueprint::Given->new(
+                    required => 1,
                 ),
             ),
             Bolts::Injector::Parameter::ByName->new(
-                key      => 'artifact',
-                artifact => Bolts::Artifact->new(
-                    name => 'artifact',
-                    blueprint => Bolts::Blueprint::Given->new(
-                        required => 1,
-                    ),
-                    scope     => $singleton,
+                key      => 'blueprint',
+                blueprint => Bolts::Blueprint::Given->new(
+                    required => 1,
                 ),
             ),
             Bolts::Injector::Parameter::ByName->new(
                 key      => 'does',
-                artifact => Bolts::Artifact->new(
-                    name => 'does',
-                    blueprint => Bolts::Blueprint::Given->new(
-                        required => 0,
-                    ),
-                    scope     => $singleton,
+                blueprint => Bolts::Blueprint::Given->new(
+                    required => 0,
                 ),
             ),
             Bolts::Injector::Parameter::ByName->new(
                 key      => 'isa',
-                artifact => Bolts::Artifact->new(
-                    name => 'isa',
-                    blueprint => Bolts::Blueprint::Given->new(
-                        required => 0,
-                    ),
-                    scope     => $singleton,
+                blueprint => Bolts::Blueprint::Given->new(
+                    required => 0,
                 ),
             ),
             Bolts::Injector::Parameter::ByName->new(
                 key      => 'name',
-                artifact => Bolts::Artifact->new(
-                    name => 'name',
-                    blueprint => Bolts::Blueprint::Given->new(
-                        required => 0,
-                    ),
-                    scope     => $singleton,
+                blueprint => Bolts::Blueprint::Given->new(
+                    required => 0,
                 ),
             ),
         ],
@@ -179,7 +166,7 @@ sub _build_injector {
                     class => 'Bolts::Injector::Parameter::ByPosition',
                 ),
                 infer     => 'parameters',
-                scope     => $singleton,
+                scope     => $prototype,
             ),
             setter => Bolts::Artifact->new(
                 name      => 'setter',
@@ -187,7 +174,7 @@ sub _build_injector {
                     class => 'Bolts::Injector::Parameter::ByPosition',
                 ),
                 infer     => 'parameters',
-                scope     => $singleton,
+                scope     => $prototype,
             ),
             store => Bolts::Artifact->new(
                 name      => 'store',
@@ -195,7 +182,7 @@ sub _build_injector {
                     class => 'Bolts::Injector::Store',
                 ),
                 infer     => 'parameters',
-                scope     => $singleton,
+                scope     => $prototype,
             ),
         },
         such_that_each => {

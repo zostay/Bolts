@@ -7,9 +7,9 @@ has key => (
     required    => 1,
 );
 
-has artifact => (
+has blueprint => (
     is          => 'ro',
-    does        => 'Bolts::Role::Artifact',
+    does        => 'Bolts::Blueprint::Role::Injector',
     required    => 1,
 );
 
@@ -27,14 +27,18 @@ requires 'pre_inject';
 requires 'post_inject';
 
 sub get {
-    my ($self, $loc, %params) = @_;
+    my ($self, $loc, $params) = @_;
 
-    my $artifact = $self->artifact;
-    $artifact->such_that({
-        does => $self->does_type,
-        isa  => $self->isa_type,
-    });
-    my $value = $self->artifact->get($loc, %params);
+    my $blueprint = $self->blueprint;
+    my $key       = $self->key;
+
+    my $value = $self->blueprint->get($loc, $key, %$params);
+
+    my $isa = $self->isa_type;
+    $isa->assert_valid($value) if defined $isa;
+
+    my $does = $self->does_type;
+    $does->assert_valid($value) if defined $does;
 
     return $value;
 }

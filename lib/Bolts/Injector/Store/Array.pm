@@ -12,9 +12,9 @@ has position => (
 sub pre_inject { }
 
 sub post_inject {
-    my ($self, $loc, %in_params, $object) = @_;
+    my ($self, $loc, $in_params, $object) = @_;
 
-    my $value = $self->get($loc, %in_params);
+    my $value = $self->get($loc, $in_params);
     if ($self->has_position) {
         $object->[ $self->position ] = $value;
     else {

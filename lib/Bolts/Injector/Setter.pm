@@ -17,12 +17,12 @@ sub _build_name { $_[0]->key }
 sub pre_inject { }
 
 sub post_inject {
-    my ($self, $loc, %in_params, $object) = @_;
+    my ($self, $loc, $in_params, $object) = @_;
 
     Carp::croak(qq[Can't use setter injection on "$object".])
         unless defined $object and Scalar::Util::blessed($object);
 
-    my $value = $self->get($loc, %in_params);
+    my $value = $self->get($loc, $in_params);
     my $name = $self->name;
     $object->$name($value);
 }
