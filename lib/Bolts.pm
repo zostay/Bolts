@@ -371,4 +371,12 @@ sub parameter($) {
     return $meta->acquire('blueprint', 'given', $param);
 }
 
+sub value($) {
+    my ($meta, $value) = @_;
+
+    return $meta->acquire('blueprint', 'literal', {
+        value => $value,
+    });
+);
+
 1;
