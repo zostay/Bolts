@@ -3,6 +3,7 @@ use Moose;
 
 with 'Bolts::Inference';
 
+use Class::Load ();
 use Moose::Util ();
 
 sub infer {
@@ -11,6 +12,8 @@ sub infer {
     return unless $blueprint->isa('Bolts::Blueprint::Factory');
 
     my $class = $blueprint->class;
+    Class::Load::load_class($class);
+
     my $meta = Moose::Util::find_meta($class);
 
     return unless defined $meta;
