@@ -30,57 +30,79 @@ has blueprint => (
 sub _build_blueprint {
     my $self = shift;
 
-    my $bp = Bolts::Bag->create_or_reuse(
-        package  => 'Bolts::Meta::Locator::Blueprint',
-        contents => {
-            acquired => Bolts::Artifact::Thunk->new(
-                thunk => sub {
-                    my ($self, $bag, %o) = @_;
-                    Class::Load::load_class('Bolts::Blueprint::Acquired');
-                    Bolts::Blueprint::Acquired->new(%o);
-                },
-            ),
-            given => Bolts::Artifact::Thunk->new(
-                thunk => sub {
-                    my ($self, $bag, %o) = @_;
-                    Class::Load::load_class('Bolts::Blueprint::Given');
-                    Bolts::Blueprint::Given->new(%o);
-                },
-            ),
-            literal => Bolts::Artifact::Thunk->new(
-                thunk => sub {
-                    my ($self, $bag, %o) = @_;
-                    Class::Load::load_class('Bolts::Blueprint::Literal');
-                    Bolts::Blueprint::Literal->new(%o);
-                },
-            ),
-            built => Bolts::Artifact::Thunk->new(
-                thunk => sub {
-                    my ($self, $bag, %o) = @_;
-                    Class::Load::load_class('Bolts::Blueprint::Built');
-                    Bolts::Blueprint::Built->new(%o);
-                },
-            ),
-            built_injector => Bolts::Artifact::Thunk->new(
-                thunk => sub {
-                    my ($self, $bag, %o) = @_;
-                    Class::Load::load_class('Bolts::Blueprint::BuiltInjector');
-                    Bolts::Blueprint::BuiltInjector->new(%o);
-                },
-            ),
-            factory => Bolts::Artifact::Thunk->new(
-                thunk => sub {
-                    my ($self, $bag, %o) = @_;
-                    Class::Load::load_class('Bolts::Blueprint::Factory');
-                    Bolts::Blueprint::Factory->new(%o);
-                },
-            ),
-        },
+    my $bp = Bolts::Bag->start_bag(
+        package      => 'Bolts::Meta::Locator::Blueprint',
+        meta_locator => $self,
         such_that_each => {
             does => 'Bolts::Blueprint',
         },
     );
-    return $bp;
+
+    return $bp->name->new if $bp->is_finished_bag;
+
+    $bp->add_artifact(
+        acquired => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::Acquired');
+                Bolts::Blueprint::Acquired->new(%o);
+            },
+        ),
+    );
+
+    $bp->add_artifact(
+        given => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::Given');
+                Bolts::Blueprint::Given->new(%o);
+            },
+        ),
+    );
+
+    $bp->add_artifact(
+        literal => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::Literal');
+                Bolts::Blueprint::Literal->new(%o);
+            },
+        ),
+    );
+
+    $bp->add_artifact(
+        built => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::Built');
+                Bolts::Blueprint::Built->new(%o);
+            },
+        ),
+    );
+
+    $bp->add_artifact(
+        built_injector => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::BuiltInjector');
+                Bolts::Blueprint::BuiltInjector->new(%o);
+            },
+        ),
+    );
+
+    $bp->add_artifact(
+        factory => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::Factory');
+                Bolts::Blueprint::Factory->new(%o);
+            },
+        ),
+    );
+
+    $bp->finish_bag;
+
+    return $bp->name->new;
 }
 
 has inference => (
@@ -156,39 +178,54 @@ sub _build_injector {
         ],
     );
 
-    return Bolts::Bag->create_or_reuse(
-        package  => 'Bolts::Meta::Locator::Injector',
-        contents => {
-            parameter_name => $parameter_name,
-            parameter_position => Bolts::Artifact->new(
-                name      => 'parameter_position',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Injector::Parameter::ByPosition',
-                ),
-                infer     => 'parameters',
-                scope     => $prototype,
-            ),
-            setter => Bolts::Artifact->new(
-                name      => 'setter',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Injector::Parameter::ByPosition',
-                ),
-                infer     => 'parameters',
-                scope     => $prototype,
-            ),
-            store => Bolts::Artifact->new(
-                name      => 'store',
-                blueprint => Bolts::Blueprint::Factory->new(
-                    class => 'Bolts::Injector::Store',
-                ),
-                infer     => 'parameters',
-                scope     => $prototype,
-            ),
-        },
+    my $bag = Bolts::Bag->start_bag(
+        package        => 'Bolts::Meta::Locator::Injector',
+        meta_locator   => $self,
         such_that_each => {
             does => 'Bolts::Injector',
         },
     );
+
+    return $bag->name->new if $bag->is_finished_bag;
+
+    $bag->add_artifact( parameter_name => $parameter_name );
+    
+    $bag->add_artifact(
+        parameter_position => Bolts::Artifact->new(
+            name      => 'parameter_position',
+            blueprint => Bolts::Blueprint::Factory->new(
+                class => 'Bolts::Injector::Parameter::ByPosition',
+            ),
+            infer     => 'parameters',
+            scope     => $prototype,
+        ),
+    );
+
+    $bag->add_artifact(
+        setter => Bolts::Artifact->new(
+            name      => 'setter',
+            blueprint => Bolts::Blueprint::Factory->new(
+                class => 'Bolts::Injector::Parameter::ByPosition',
+            ),
+            infer     => 'parameters',
+            scope     => $prototype,
+        ),
+    );
+
+    $bag->add_artifact(
+        store => Bolts::Artifact->new(
+            name      => 'store',
+            blueprint => Bolts::Blueprint::Factory->new(
+                class => 'Bolts::Injector::Store',
+            ),
+            infer     => 'parameters',
+            scope     => $prototype,
+        ),
+    );
+
+    $bag->finish_bag;
+
+    return $bag->name->new;
 }
 
 has scope => (
@@ -211,23 +248,30 @@ sub _build_scope {
         scope     => $singleton,
     );
 
-    return Bolts::Bag->create_or_reuse(
-        package  => 'Bolts::Meta::Locator::Scope',
-        contents => {
-            _         => $prototype_artifact,
-            prototype => $prototype_artifact,
-            singleton => Bolts::Artifact->new(
-                name      => 'singleton',
-                blueprint => Bolts::Blueprint::Literal->new(
-                    value => $singleton,
-                ),
-                scope     => $singleton,
-            ),
-        },
+    my $bag = Bolts::Bag->start_bag(
+        package        => 'Bolts::Meta::Locator::Scope',
+        meta_locator   => $self,
         such_that_each => {
             does => 'Bolts::Scope',
         },
     );
+
+    return $bag->name->new if $bag->is_finished_bag;
+
+    $bag->add_artifact(_         => $prototype_artifact);
+    $bag->add_artifact(prototype => $prototype_artifact);
+
+    $bag->add_artifact(
+        singleton => Bolts::Artifact->new(
+            name      => 'singleton',
+            blueprint => Bolts::Blueprint::Literal->new(
+                value => $singleton,
+            ),
+            scope     => $singleton,
+        ),
+    );
+
+    return $bag->name->new;
 }
 
 1;

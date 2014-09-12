@@ -7,17 +7,19 @@ use Moose::Util::TypeConstraints;
 use Safe::Isa;
 use Scalar::Util qw( blessed reftype );
 
-sub start {
+sub start_bag {
     my ($class, %params) = @_;
 
-    my $package   = $params{package};
+    my $package        = $params{package};
+    my $meta_locator   = $params{meta_locator};
+    my $such_that_each = $params{such_that_each};
 
     my $meta;
     my %options = (superclasses => [ 'Moose::Object' ]);
     if (defined $package) {
         $meta = Moose::Util::find_meta($package);
         if (defined $meta) {
-            Carp::croak("The package ", $meta->name, " is already defined. You cannot create another bag there.");
+            return $meta;
         }
 
         $meta = Moose::Meta::Class->create($package, %options);
@@ -34,82 +36,33 @@ sub start {
     $meta = Moose::Util::MetaRole::apply_metaroles(
         for             => $meta,
         class_metaroles => {
-            class => [ 'Bolts::Meta::Class::Trait::Locator' ],
+            class => [ 
+                'Bolts::Meta::Class::Trait::Locator',
+                'Bolts::Meta::Class::Trait::Bag',
+            ],
         },
     );
+
+    if ($such_that_each) {
+        my $such_that = $class->_expand_such_that($such_that_each);
+        if (defined $such_that->{does}) {
+            $meta->such_that_does($such_that->{does});
+        }
+        if (defined $such_that->{isa}) {
+            $meta->such_that_isa($such_that->{isa});
+        }
+    }
+
+    if ($meta_locator) {
+        $meta->locator($meta_locator);
+    }
 
     Carp::cluck("bad meta @{[$meta->name]}") unless $meta->can('locator');
 
     return $meta;
 }
 
-sub create {
-    my ($class, %params) = @_;
-
-    my $contents  = $params{contents};
-    my $such_that = $class->expand_such_that($params{such_that_each});
-
-    my $meta = $class->start(%params);
-
-    for my $method (keys %$contents) {
-        my $value = $contents->{$method};
-        $class->add_item($meta, $method, $value, $such_that);
-    }
-
-    return $class->finish($meta);
-}
-
-sub create_or_reuse {
-    my ($class, %params) = @_;
-
-    my $package = $params{package};
-    my $meta    = Moose::Util::find_meta($package);
-
-    if (defined $meta) {
-        return $meta->name->new;
-    }
-    else {
-        return $class->create(%params);
-    }
-}
-
-sub add_item {
-    my ($class, $meta, $method, $value, $such_that) = @_;
-
-    if ($value->$_does('Bolts::Role::Artifact')) {
-        $value->such_that($such_that) if $such_that;
-        $meta->add_method($method => sub { $value });
-    }
-
-    elsif (reftype($value) eq 'CODE') {
-        $value = $class->wrap_method_in_such_that_check($value, $such_that)
-            if $such_that;
-        $meta->add_method($method => $value);
-    }
-
-    else {
-        # TODO It would be better to assert the validity of the checks on
-        # the value immediately.
-
-        $value = $class->wrap_method_in_such_that_check(sub { $value }, $such_that)
-            if $such_that;
-        $meta->add_method($method => $value);
-    }
-
-}
-
-sub finish {
-    my ($class, $meta) = @_;
-
-    $meta->make_immutable(
-        replace_constructor => 1,
-        replace_destructor  => 1,
-    );
-
-    return $meta->name->new;
-}
-
-sub expand_such_that {
+sub _expand_such_that {
     my ($class, $such_that) = @_;
 
     $such_that //= {};
@@ -126,30 +79,5 @@ sub expand_such_that {
     return \%expanded_such_that;
 }
 
-sub wrap_method_in_such_that_check {
-    my ($class, $code, $such_that) = @_;
-
-    my $wrapped;
-    if (defined $such_that->{isa} or defined $such_that->{does}) {
-        $wrapped = sub {
-            my $result = $code->(@_);
-
-            $such_that->{isa}->assert_valid($result)
-                if defined $such_that->{isa};
-
-            $such_that->{does}->assert_valid($result)
-                if defined $such_that->{does};
-
-            return $result;
-        };
-    }
-    else {
-        $wrapped = sub {
-            return scalar $code->(@_);
-        };
-    }
-
-    return $wrapped;
-}
 
 __PACKAGE__->meta->make_immutable;

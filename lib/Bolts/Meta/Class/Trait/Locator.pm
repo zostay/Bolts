@@ -4,7 +4,7 @@ use Moose::Role;
 use Bolts::Meta::Locator;
 
 has locator => (
-    is          => 'ro',
+    is          => 'rw',
     does        => 'Bolts::Role::Locator',
     lazy_build  => 1,
     builder     => 'build_locator',

@@ -26,7 +26,10 @@ my @BAG_META;
 
 Moose::Exporter->setup_import_methods(
     class_metaroles => {
-        class => [ 'Bolts::Meta::Class::Trait::Locator' ],
+        class => [ 
+            'Bolts::Meta::Class::Trait::Locator',
+            'Bolts::Meta::Class::Trait::Bag',
+        ],
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
     with_meta => [ qw(
@@ -292,7 +295,7 @@ sub artifact {
         injectors    => \@injectors,
     );
 
-    Bolts::Bag->add_item($meta, $name, $artifact);
+    $meta->add_artifact($name, $artifact);
     return;
 }
 
@@ -313,7 +316,7 @@ sub bag {
     $meta = _bag_meta($meta);
 
     my $def = $partial_def->($name);
-    Bolts::Bag->add_item($meta, $name, sub { $def });
+    $meta->add_artifact($name, sub { $def });
 }
 
 sub contains(&) {
@@ -326,7 +329,7 @@ sub contains(&) {
 
         my $parent = $meta->name;
 
-        my $bag_meta = Bolts::Bag->start(
+        my $bag_meta = Bolts::Bag->start_bag(
             package => "${parent}::$name",
         );
         push @BAG_META, $bag_meta;
@@ -335,7 +338,8 @@ sub contains(&) {
 
         pop @BAG_META;
 
-        return Bolts::Bag->finish($bag_meta);
+        $bag_meta->finish_bag;
+        return $bag_meta->name->new;
     };
 }
 
