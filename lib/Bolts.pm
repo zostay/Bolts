@@ -381,6 +381,6 @@ sub value($) {
     return $meta->acquire('blueprint', 'literal', {
         value => $value,
     });
-);
+}
 
 1;
