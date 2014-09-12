@@ -1,4 +1,7 @@
 package Bolts::Bag;
+
+# ABSTRACT: Helper for creating bags containing artifacts
+
 use Moose;
 
 use Carp;
@@ -6,6 +9,98 @@ use Moose::Util::MetaRole;
 use Moose::Util::TypeConstraints;
 use Safe::Isa;
 use Scalar::Util qw( blessed reftype );
+
+=head1 SYNOPSIS
+
+    use Bolts;
+
+    my $meta = Bolts::Bag->start_bag(
+        package => 'MyApp::Holder',
+    );
+
+    # In case the definition already ran...
+    unless ($meta->is_finished_bag) {
+        $meta->add_artifact(logger => Bolts::Artifact->new(
+            blueprint => $meta->locator->acquire('blueprint', 'factory', {
+                class => 'MyApp::Logger',
+            },
+            infer => 'dependencies',
+            scope => $meta->locator->acquire('scope', 'singleton'),
+        ));
+
+        $meta->add_artifact(log_file => "var/messages.log");
+
+        $meta->add_artifact(config => sub {
+            return YAML::LoadFile("etc/config.yml");
+        });
+
+        $meta->finish_bag;
+    }
+
+    my $bag = $meta->name->new;
+
+=head1 DESCRIPTION
+
+This is a helper for creating bag objects. Technically, any object may be treated as a bag. However, this is the way Bolts creates bags through the sugar API in L<Bolts> and some other internals. The primary benefit to creating this way is access to the bag meta locator during construction so you can use the standard blueprints, injectors, scopes, etc. in the standard way.
+
+=head1 METHODS
+
+=head2 start_bag
+
+    my $meta = Bolts::Bag->start_bag(
+        package        => 'MyApp::Bag',
+        meta_locator   => Bolts::Meta::Locator->new,
+        such_that_each => {
+            does => 'MyApp::Role',
+            isa  => 'MyApp::Thing',
+        },
+    );
+
+This returns a L<Class::MOP::Class> object representing the bag you want to define. The returned meta class will be created new if it does not yet exist. If it does already exist (as determined by L<Moose::Util/find_meta>, the existing class will be returned.
+
+It is good practice to always check to see if the definition of the bag has already been finished before continuing, which allows the definition code to be run more than once:
+
+    if ($meta->is_finished_bag) {
+        # some ->add_artifact calls here...
+        
+        $meta->finish_bag;
+    }
+
+You can then use the meta class to get an instance like so:
+
+    my $bag = $meta->name->new(%params);
+
+This class method takes the following parameters:
+
+=over
+
+=item C<package>
+
+This is the package name to give the class within the Perl interpreter. If not given, the name will be anonymously chosen by L<Moose>. It will also never return a finished class.
+
+=item C<meta_locator>
+
+You may pass this in to customize the meta locator object to use with your class. This is L<Bolts::Meta::Locator> by default.
+
+=item C<such_that_each>
+
+This is used to limit the types of artifacts allowed within the bag. This is a hash that may contain one or both of these keys:
+
+=over
+
+=item C<does>
+
+This names a L<Moose::Role> that all artifacts returned from this bag must implement.
+
+=item C<isa>
+
+This names a Moose type constraint that all artifacts returned from this bag must match.
+
+=back
+
+=back
+
+=cut
 
 sub start_bag {
     my ($class, %params) = @_;
