@@ -13,7 +13,8 @@ sub resolve {
     my ($self, $bag, $item, $parameters) = @_;
 
     return $item->get($bag, %$parameters)
-        if $item->$_does('Bolts::Role::Artifact');
+        if $item->$_can('does')
+       and $item->$_does('Bolts::Role::Artifact');
 
     return $item;
 }
