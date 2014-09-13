@@ -12,7 +12,7 @@ has locator => (
 );
 
 sub build_locator {
-    Bolts::Meta::Locator->new;
+    $Bolts::GLOBAL_FALLBACK_META_LOCATOR->new;
 }
 
 1;
