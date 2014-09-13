@@ -39,19 +39,25 @@ sub add_artifact {
         $meta->add_method($method => sub { $value });
     }
 
-    elsif (reftype($value) eq 'CODE') {
-        $value = $meta->_wrap_method_in_such_that_check($value, $such_that)
-            if $such_that;
-        $meta->add_method($method => $value);
+    elsif (defined reftype($value) and reftype($value) eq 'CODE') {
+        my $thunk = Bolts::Artifact::Thunk->new(
+            %$such_that,
+            thunk => $value,
+        );
+
+        $meta->add_method($method => sub { $thunk });
     }
 
     else {
         # TODO It would be better to assert the validity of the checks on
         # the value immediately.
 
-        $value = $meta->_wrap_method_in_such_that_check(sub { $value }, $such_that)
-            if $such_that;
-        $meta->add_method($method => $value);
+        my $thunk = Bolts::Artifact::Thunk->new(
+            %$such_that,
+            thunk => sub { $value },
+        );
+
+        $meta->add_method($method => sub { $thunk });
     }
 
 }

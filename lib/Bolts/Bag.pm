@@ -21,6 +21,7 @@ use Scalar::Util qw( blessed reftype );
     # In case the definition already ran...
     unless ($meta->is_finished_bag) {
         $meta->add_artifact(logger => Bolts::Artifact->new(
+            name      => 'logger',
             blueprint => $meta->locator->acquire('blueprint', 'factory', {
                 class => 'MyApp::Logger',
             },

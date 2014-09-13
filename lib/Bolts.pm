@@ -180,7 +180,7 @@ sub artifact {
     my $meta = _bag_meta(shift);
     my $name = shift;
 
-    # No arguments means it's a given 
+    # No arguments means it's acquired with given parameters
     my $blueprint_name;
     my %params;
     if (@_ == 0) {
