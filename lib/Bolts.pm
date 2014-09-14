@@ -417,7 +417,24 @@ sub dep($) {
     });
 }
 
+=head2 parameter
 
+    artifact name => (
+        ...
+        dependencies => {
+            thing => parameter {
+                isa      => 'MyApp::Thing',
+                required => 1,
+            },
+            other_thing => parameter {
+                does     => 'MyApp::OtherThing',
+            },
+        },
+    );
+
+Helper to allow a dependency to be passed as a parameter to the call to L<Bolts::Role::Locator/acquire>. To provide validators for the values pass, you may set the C<isa> and C<does> options to a L<Moose> type constraint. To make the parameter required, set the C<required> option.
+
+=cut
 
 sub parameter($) {
     my ($meta, $p) = @_;
@@ -433,6 +450,20 @@ sub parameter($) {
         blueprint => $meta->acquire('blueprint', 'given', \%bp),
     },
 }
+
+=head2 value
+
+    artifact name => (
+        ...
+        depedencies => {
+            thing => value 42,
+        },
+    );
+
+Helper that passes a literal value through as a dependency to the artifact
+during injection.
+
+=cut
 
 sub value($) {
     my ($meta, $value) = @_;
