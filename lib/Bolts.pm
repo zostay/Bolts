@@ -7,6 +7,8 @@ use Moose::Exporter;
 
 use Class::Load ();
 use Moose::Util::MetaRole ();
+use Moose::Util::TypeConstraints ();
+use Safe::Isa;
 use Scalar::Util ();
 use Carp ();
 
@@ -173,6 +175,36 @@ In addition to the options above, you may also specify the scope. This is usuall
 
 =cut
 
+sub _injector {
+    my ($meta, $type, $key, $params) = @_;
+
+    my ($blueprint, $isa, $does);
+    if ($params->$_can('does') and $params->$_does('Bolts::Blueprint')) {
+        $blueprint = $params;
+    }
+    else {
+        $blueprint = $params->{blueprint} if exists $params->{blueprint};
+        $isa       = $params->{isa}       if exists $params->{isa};
+        $does      = $params->{does}      if exists $params->{does};
+    }
+
+    Carp::croak("invalid blueprint in dependencies $key")
+        unless defined $blueprint 
+           and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
+
+    my %other_params;
+    $other_params{isa}  = Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($isa)
+        if defined $isa;
+    $other_params{does} = Moose::Util::TypeConstraints::find_or_create_does_type_constraint($does)
+        if defined $does;
+
+    return $meta->acquire('injector', $type, {
+        key       => $key,
+        blueprint => $blueprint,
+        %other_params,
+    });
+}
+
 # TODO This sugar requires special knowledge of the built-in blueprint
 # types. It would be slick if this was not required. On the other hand, that
 # sounds like very deep magic and that might just be taking the magic too far.
@@ -237,40 +269,26 @@ sub artifact {
         my $dependencies = delete $params{dependencies};
 
         if ($dependencies->$_does('Bolts::Blueprint')) {
-            Carp::croak("invalid blueprint in dependencies")
-                unless defined $dependencies and $dependencies->$_does('Bolts::Blueprint::Role::Injector');
-            push @injectors,
-                $meta->acquire('injector', 'parameter_position', {
-                    key       => '0',
-                    blueprint => $dependencies,
-                }),
+            push @injectors, _injector(
+                $meta, 'parameter_position',
+                '0', { blueprint => $dependencies },
+            );
         }
         elsif (ref $dependencies eq 'HASH') {
             for my $key (keys %$dependencies) {
-                my $blueprint = $dependencies->{$key};
-
-                Carp::croak("invalid blueprint in dependencies $key")
-                    unless defined $blueprint and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
-
-                push @injectors, 
-                    $meta->acquire('injector', 'parameter_name', {
-                        key       => $key,
-                        blueprint => $blueprint,
-                    });
+                push @injectors, _injector(
+                    $meta, 'parameter_name', 
+                    $key, $dependencies->{$key},
+                );
             }
         }
         elsif (ref $dependencies eq 'ARRAY') {
             my $key = 0;
-            for my $blueprint (@$dependencies) {
-
-                Carp::croak("invalid blueprint in dependencies $key")
-                    unless defined $blueprint and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
-
-                push @injectors, 
-                    $meta->acquire('injector', 'parameter_position', {
-                        key       => $key++,
-                        blueprint => $blueprint,
-                    });
+            for my $params (@$dependencies) {
+                push @injectors, _injector(
+                    $meta, 'parameter_position',
+                    $key++, $params,
+                );
             }
         }
         else {
@@ -351,6 +369,21 @@ sub such_that_each(@) {
     ...
 }
 
+=head2 builder
+
+    artifact name => (
+        ...
+        dependencies => {
+            thing => builder {
+                return MyApp::Thing->new,
+            },
+        },
+    );
+
+This is a helper for setting a L<Bolts::Blueprint::BuiltInjector> for use in passing in a dependency that is wired directly to the builder function given.
+
+=cut
+
 sub builder(&) {
     my ($meta, $code) = @_;
     $meta = _bag_meta($meta);
@@ -359,6 +392,21 @@ sub builder(&) {
         builder => $code,
     });
 }
+
+=head2 dep
+
+    artifact other => ( ... );
+
+    artifact name => (
+        ...
+        dependencies => {
+            thing => dep('other'),
+        },
+    );
+
+This is a helper for laoding dependencies from a path in the current bag (or a bag within it).
+
+=cut
 
 sub dep($) {
     my ($meta, @path) = @_;
@@ -369,10 +417,21 @@ sub dep($) {
     });
 }
 
-sub parameter($) {
-    my ($meta, $param) = @_;
 
-    return $meta->acquire('blueprint', 'given', $param);
+
+sub parameter($) {
+    my ($meta, $p) = @_;
+
+    my %bp = %$p;
+    my %ip;
+    for my $k (qw( isa does )) {
+        $ip{$k} = delete $bp{$k} if exists $bp{$k};
+    }
+
+    return {
+        %ip,
+        blueprint => $meta->acquire('blueprint', 'given', \%bp),
+    },
 }
 
 sub value($) {
@@ -382,5 +441,15 @@ sub value($) {
         value => $value,
     });
 }
+
+=head1 GLOBALS
+
+=head2 $Bolts::GLOBAL_FALLBACK_META_LOCATOR
+
+B<Subject to Change:> This is the name of the locator to use for locating the meta objects needed to configure within Bolts. The default is L<Bolts::Meta::Locator>, which defines the standard set of scopes, blueprints, etc.
+
+This is variable likely to change or disappear in the future.
+
+=cut
 
 1;

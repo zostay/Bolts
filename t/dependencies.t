@@ -3,7 +3,7 @@ use v5.10;
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 17;
 use lib "t/lib";
 
 {
@@ -86,6 +86,15 @@ my $bank = $bag->acquire('account', {
 });
 isa_ok($bank, 'Test::AccountBook');
 is($bank->balance, 0, 'bank balance starts at $0');
+
+eval {
+    my $broke = $bag->acquire('account', {
+        name         => 'Broke',
+        account_type => 'something_else',
+    });
+};
+
+like($@, qr{^Validation failed }, 'parameters check type');
 
 my $income = $bag->acquire('account', {
     name         => 'Fancycorp',
