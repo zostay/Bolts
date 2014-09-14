@@ -13,6 +13,48 @@ use Moose::Util::TypeConstraints;
 use Safe::Isa;
 use Scalar::Util qw( weaken );
 
+=head1 SYNOPSIS
+
+    use Bolts;
+    my $meta = Bolts::Bag->start_bag;
+
+    my $artifact = Bolts::Artifact->new(
+        name         => 'key',
+        blueprint    => $meta->acquire('blueprint', 'factory', {
+            class => 'MyApp::Thing',
+        }),
+        scope        => $meta->acquire('scope', 'singleton'),
+        infer        => 'dependencies',
+        dependencies => {
+            foo => parameter {
+                isa => 'Str',
+            },
+            bar => value 42,
+        },
+    );
+
+=head1 DESCRIPTION
+
+This is the primary implementation of L<Bolts::Role::Artifact> with all the features described in L<Bolts>, including blueprint, scope, inferrence, injection, etc.
+
+=head1 ROLES
+
+=over
+
+=item *
+
+L<Bolts::Role::Artifact>
+
+=back
+
+=head1 ATTRIBUTES
+
+=head2 name
+
+B<Required.> This sets the name of the artifact that is being created. This is passed through as part of scope resolution (L<Bolts::Scope>) and blueprint construction (L<Bolts::Blueprint>).
+
+=cut
+
 subtype 'Bolts::Injector::List',
      as 'ArrayRef',
   where { all { $_->$_does('Bolts::Injector') } @$_ };
@@ -23,11 +65,23 @@ has name => (
     required    => 1,
 );
 
+=head2 blueprint
+
+B<Required.> This sets the L<Bolts::Blueprint> used to construct the artifact.
+
+=cut
+
 has blueprint => (
     is          => 'ro',
     does        => 'Bolts::Blueprint',
     required    => 1,
 );
+
+=head2 scope
+
+B<Required.> This sets the L<Bolts::Scope> used to manage the object's lifecycle.
+
+=cut
 
 has scope => (
     is          => 'ro',
@@ -35,12 +89,44 @@ has scope => (
     required    => 1,
 );
 
+=head2 infer
+
+This is a setting that tells the artifact what kind of inferrence to perform when inferring injectors from the blueprint. This may e set to one of the following:
+
+=over
+
+=item none
+
+B<Default.> When this is set, no inferrence is performed. The injectors will be defined according to L</dependencies> only.
+
+=item parameters
+
+This option tells the artifact to infer the injection using parameters. When the object is acquired and resolved, the caller will need to pass through any parameters needed for building the object.
+
+=item dependencies
+
+This option tells the artifact to infer the injection using acquired artifacts. The acquisition will happen from the bag containing the artifact with paths matching the name of the parameter.
+
+B<Caution:> The way this work is likely to be customizeable in the future and the default behavior may differ.
+
+=back
+
+=cut
+
 has infer => (
     is          => 'ro',
     isa         => enum([qw( none parameters dependencies )]),
     required    => 1,
     default     => 'none',
 );
+
+=head2 inference_done
+
+This is an internal setting, which has a reader method named C<is_inference_done> and a writer named C<inference_is_done>. Do not use the writer directly unless you know what you are doing. You cannot set this attribute during construction.
+
+Normally, this is a true value after the automatic inference of injectors has been completed and false before.
+
+=cut 
 
 has inference_done => (
     reader      => 'is_inference_done',
@@ -50,6 +136,12 @@ has inference_done => (
     default     => 0,
     init_arg    => undef,
 );
+
+=head2 injectors
+
+This is an array of L<Bolts::Injector>s, which are used to inject values into or after the construction process. Anything set here will take precedent over inferrence.
+
+=cut
 
 has injectors => (
     is          => 'ro',
@@ -63,10 +155,22 @@ has injectors => (
     },
 );
 
+=head2 does
+
+This is used to control the role the artifact constructed must impement. Usually, this is not set directly, but set by the bag instead as an additional control on bag contents.
+
+=cut
+
 has does => (
     accessor    => 'does_type',
     isa         => 'Moose::Meta::TypeConstraint',
 );
+
+=head2 isa
+
+This is used to control the type of the constructed artifact. Usually, this is not set directly, but set by the bag instead as an additional control on bag contents.
+
+=cut
 
 has isa => (
     accessor    => 'isa_type',
@@ -74,6 +178,14 @@ has isa => (
 );
 
 no Moose::Util::TypeConstraints;
+
+=head1 METHODS
+
+=head2 infer_injectors
+
+This performs the inference of L</injectors> based upon the L</infer> setting. This is called automatically when the artifact is resolved.
+
+=cut
 
 sub infer_injectors {
     my ($self, $bag) = @_;
@@ -136,6 +248,12 @@ sub infer_injectors {
     }
 }
 
+=head2 such_that
+
+This is a helper for setting L</does> and L</isa>. The bag that contains the artifact normally calls this to enforce type constriants on the artifact.
+
+=cut
+
 sub such_that {
     my ($self, $such_that) = @_;
 
@@ -162,6 +280,12 @@ sub such_that {
 #     #     return $self->get($bag, %params);
 #     # });
 # }
+
+=head2 get
+
+This is called during the resolution phase of L<Bolts::Role::Locator> to either retrieve the object from the L</scope> or construct a new object according to the L</blueprint>.
+
+=cut
 
 sub get {
     my ($self, $bag, %input_params) = @_;
