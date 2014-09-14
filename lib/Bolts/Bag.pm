@@ -71,6 +71,8 @@ You can then use the meta class to get an instance like so:
 
     my $bag = $meta->name->new(%params);
 
+After getting the meta class returned from this class method, the remainder of the methods you need are found in L<Bolts::Meta::Class::Trait::Bag> and L<Bolts::Meta::Class::Trait::Locator>, which the returned object implement.
+
 This class method takes the following parameters:
 
 =over
