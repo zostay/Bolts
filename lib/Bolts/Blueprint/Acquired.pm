@@ -11,6 +11,26 @@ use Bolts::Util qw( locator_for );
 =head1 SYNOPSIS
 
     use Bolts;
+
+    # Using the usual sugar... these all use acquired blueprints
+    artifact thing1; # acquired by attribute
+    artifact thing2 => (
+        path => [ 'thing1' ],
+    );
+    artifact thing3 => (
+        locator => $other_loc,
+        path    => [ 'other', 'thing' ],
+    );
+
+    # Or for injection
+    artifact thing4 => (
+        class => 'MyApp::Thing',
+        dependencies => {
+            foo => dep('thing1'), # uses this blueprint
+        },
+    );
+
+    # Or more manually...
     my $meta = Bolts::Bag->start_bag;
 
     my $artifact = Bolts::Artifact->new(
