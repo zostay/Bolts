@@ -24,13 +24,14 @@ use Carp ();
     my $meta = Bolts::Bag->start_bag;
 
     my $artifact = Bolts::Artifact->new(
-        name
+        name      => 'thing',
         blueprint => $meta->locator->acquire('blueprint', 'built', {
             builder => sub {
                 my ($self, $bag, @params) = @_;
                 return MyApp::Thing->new(@params);
             },
         }),
+        scope    => $meta->locator->acquire('scope', '_'),
     );
 
 =head1 DESCRIPTION

@@ -30,7 +30,7 @@ use Bolts::Util qw( locator_for );
         },
     );
 
-    # Or more manually...
+    # Or directly...
     my $meta = Bolts::Bag->start_bag;
 
     my $artifact = Bolts::Artifact->new(
