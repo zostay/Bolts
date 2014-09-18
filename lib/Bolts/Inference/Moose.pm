@@ -50,6 +50,16 @@ use C<< isa => 'rw' >> or use C<< writer => 'set_attr' >> or C<< accessor =>
 dependency instead. If neither a setter or an C<init_arg> is defined, then the
 attribute will be skipped for injection.
 
+=head1 ROLES
+
+=over
+
+=item *
+
+L<Bolts::Inferrence>
+
+=back
+
 =head1 METHODS
 
 =head2 infer
