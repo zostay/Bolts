@@ -54,7 +54,7 @@ L<Bolts::Blueprint>
 
 =head2 builder
 
-B<Required.> This is the subroutine to execute to construct the artifact. The reader for this attribute is named C<the_reader>.
+B<Required.> This is the subroutine to execute to construct the artifact. The reader for this attribute is named C<the_builder>.
 
 =cut
 
