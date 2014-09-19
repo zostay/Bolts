@@ -16,7 +16,7 @@ use Carp ();
     artifact thing => (
         ...
         parameters => {
-            thing => parameter { # uses blueprint, given
+            thing => option { # uses blueprint, given
                 isa      => 'Str',
                 required => 1,
             },

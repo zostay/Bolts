@@ -26,7 +26,7 @@ use Scalar::Util qw( weaken );
         scope      => $meta->acquire('scope', 'singleton'),
         infer      => 'acquisition',
         parameters => {
-            foo => parameter {
+            foo => option {
                 isa => 'Str',
             },
             bar => value 42,

@@ -15,22 +15,22 @@ use lib "t/lib";
     artifact journal_entry => (
         class => 'Test::JournalEntry',
         parameters => {
-            ledger => parameter {
+            ledger => option {
                 isa      => 'Test::GeneralLedger',
                 required => 1,
             },
-            description => parameter {
+            description => option {
                 isa      => 'Str',
                 required => 1,
             },
-            account => parameter {
+            account => option {
                 isa      => 'Test::AccountBook',
                 required => 1,
             },
-            memo => parameter {
+            memo => option {
                 isa      => 'Str',
             },
-            amount => parameter {
+            amount => option {
                 isa      => 'Int',
                 required => 1,
             },
@@ -40,11 +40,11 @@ use lib "t/lib";
     artifact account => (
         class => 'Test::AccountBook',
         parameters => {
-            name => parameter {
+            name => option {
                 isa      => 'Str',
                 required => 1,
             },
-            account_type => parameter {
+            account_type => option {
                 isa      => enum([ 'debit', 'credit' ]),
                 required => 1,
             },

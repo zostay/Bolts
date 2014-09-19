@@ -35,7 +35,7 @@ Moose::Exporter->setup_import_methods(
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
     with_meta => [ qw(
-        artifact bag builder contains dep parameter such_that_each
+        artifact bag builder contains dep option such_that_each
     ) ],
     also => 'Moose',
 );
@@ -104,7 +104,7 @@ Attached to L<Bolts::Artifact> definitions are a set of blueprints (some object 
 
 Another step in resolution is injection. An B<injector> associates additional artifacts with the artifact being resolved. This might be values that need to be passed to the artifact during construction, methods that need to be called to configure the object following construction, or even keys on a hash that need to be set on the artifact.
 
-Injectors come in two flavors, dependency injection and parameter injection. With dependency injection, the framework will acquire or other provide addition artifacts to the artifact being resolved automatically, this is where much of the power of IOC comes from. Sometimes, however, an object just requires some configuration state to let it know how it will be used. In those cases, parameter injection can be used to let the caller to C<acquire> pass in the artifacts to be used for injection.
+Injectors come in two flavors, injection by automatic acquisition and by given options. With acquisition, the framework will acquire or other provide addition artifacts to the artifact being resolved automatically, this is where much of the power of IOC comes from. Sometimes, however, an object just requires some configuration state to let it know how it will be used. In those cases, options can be directly passed to C<acquire> to be used for injection.
 
 =head2 Scope
 
@@ -417,26 +417,26 @@ sub dep($) {
     });
 }
 
-=head2 parameter
+=head2 option
 
     artifact name => (
         ...
         parameters => {
-            thing => parameter {
+            thing => option {
                 isa      => 'MyApp::Thing',
                 required => 1,
             },
-            other_thing => parameter {
+            other_thing => option {
                 does     => 'MyApp::OtherThing',
             },
         },
     );
 
-Helper to allow a dependency to be passed as a parameter to the call to L<Bolts::Role::Locator/acquire>. To provide validators for the values pass, you may set the C<isa> and C<does> options to a L<Moose> type constraint. To make the parameter required, set the C<required> option.
+Helper to allow a dependency to be passed as a given option to the call to L<Bolts::Role::Locator/acquire>. To provide validators for the values pass, you may set the C<isa> and C<does> options to a L<Moose> type constraint. To make the option required, set the C<required> option.
 
 =cut
 
-sub parameter($) {
+sub option($) {
     my ($meta, $p) = @_;
 
     my %bp = %$p;
