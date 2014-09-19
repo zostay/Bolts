@@ -14,7 +14,7 @@ use lib "t/lib";
 
     artifact journal_entry => (
         class => 'Test::JournalEntry',
-        dependencies => {
+        parameters => {
             ledger => parameter {
                 isa      => 'Test::GeneralLedger',
                 required => 1,
@@ -39,7 +39,7 @@ use lib "t/lib";
 
     artifact account => (
         class => 'Test::AccountBook',
-        dependencies => {
+        parameters => {
             name => parameter {
                 isa      => 'Str',
                 required => 1,
@@ -69,7 +69,7 @@ use lib "t/lib";
 
     artifact general_ledger => (
         class => 'Test::GeneralLedger',
-        dependencies => {
+        parameters => {
             line_id   => dep('line_id'),
             timestamp => dep('now'),
             split     => dep('empty_list'),

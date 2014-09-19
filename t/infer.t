@@ -18,7 +18,7 @@ use lib "t/lib";
     artifact account => (
         class => 'Test::AccountBook',
         infer => 'parameters',
-        dependencies => {
+        parameters => {
             journal => builder { [] },
         },
     );

@@ -25,7 +25,7 @@ use Bolts::Util qw( locator_for );
     # Or for injection
     artifact thing4 => (
         class => 'MyApp::Thing',
-        dependencies => {
+        parameters => {
             foo => dep('thing1'), # uses this blueprint
         },
     );

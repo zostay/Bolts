@@ -15,7 +15,7 @@ use Carp ();
     # Using the usual sugar...
     artifact thing => (
         ...
-        dependencies => {
+        parameters => {
             thing => builder {
                 my ($self, $bag, %params) = @_;
                 return MyApp::Thing->new(%params);

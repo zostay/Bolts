@@ -176,7 +176,7 @@ In addition to the options above, you may also specify the scope. This is usuall
 =cut
 
 sub _injector {
-    my ($meta, $type, $key, $params) = @_;
+    my ($meta, $where, $type, $key, $params) = @_;
 
     my ($blueprint, $isa, $does);
     if ($params->$_can('does') and $params->$_does('Bolts::Blueprint')) {
@@ -188,7 +188,7 @@ sub _injector {
         $does      = $params->{does}      if exists $params->{does};
     }
 
-    Carp::croak("invalid blueprint in dependencies $key")
+    Carp::croak("invalid blueprint in $where $key")
         unless defined $blueprint 
            and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
 
@@ -265,34 +265,34 @@ sub artifact {
     }
 
     my @injectors;
-    if (defined $params{dependencies}) {
-        my $dependencies = delete $params{dependencies};
+    if (defined $params{parameters}) {
+        my $parameters = delete $params{parameters};
 
-        if ($dependencies->$_does('Bolts::Blueprint')) {
+        if ($parameters->$_does('Bolts::Blueprint')) {
             push @injectors, _injector(
-                $meta, 'parameter_position',
-                '0', { blueprint => $dependencies },
+                $meta, 'parameters', 'parameter_position',
+                '0', { blueprint => $parameters },
             );
         }
-        elsif (ref $dependencies eq 'HASH') {
-            for my $key (keys %$dependencies) {
+        elsif (ref $parameters eq 'HASH') {
+            for my $key (keys %$parameters) {
                 push @injectors, _injector(
-                    $meta, 'parameter_name', 
-                    $key, $dependencies->{$key},
+                    $meta, 'parameters', 'parameter_name', 
+                    $key, $parameters->{$key},
                 );
             }
         }
-        elsif (ref $dependencies eq 'ARRAY') {
+        elsif (ref $parameters eq 'ARRAY') {
             my $key = 0;
-            for my $params (@$dependencies) {
+            for my $params (@$parameters) {
                 push @injectors, _injector(
-                    $meta, 'parameter_position',
+                    $meta, 'parameters', 'parameter_position',
                     $key++, $params,
                 );
             }
         }
         else {
-            Carp::croak("dependencies must be a blueprint, an array of blueprints, or a hash with blueprint values");
+            Carp::croak("parameters must be a blueprint, an array of blueprints, or a hash with blueprint values");
         }
     }
 
@@ -373,7 +373,7 @@ sub such_that_each(@) {
 
     artifact name => (
         ...
-        dependencies => {
+        parameters => {
             thing => builder {
                 return MyApp::Thing->new,
             },
@@ -399,7 +399,7 @@ sub builder(&) {
 
     artifact name => (
         ...
-        dependencies => {
+        parameters => {
             thing => dep('other'),
         },
     );
@@ -421,7 +421,7 @@ sub dep($) {
 
     artifact name => (
         ...
-        dependencies => {
+        parameters => {
             thing => parameter {
                 isa      => 'MyApp::Thing',
                 required => 1,

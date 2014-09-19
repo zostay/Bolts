@@ -19,13 +19,13 @@ use Scalar::Util qw( weaken );
     my $meta = Bolts::Bag->start_bag;
 
     my $artifact = Bolts::Artifact->new(
-        name         => 'key',
-        blueprint    => $meta->acquire('blueprint', 'factory', {
+        name       => 'key',
+        blueprint  => $meta->acquire('blueprint', 'factory', {
             class => 'MyApp::Thing',
         }),
-        scope        => $meta->acquire('scope', 'singleton'),
-        infer        => 'dependencies',
-        dependencies => {
+        scope      => $meta->acquire('scope', 'singleton'),
+        infer      => 'dependencies',
+        parameters => {
             foo => parameter {
                 isa => 'Str',
             },

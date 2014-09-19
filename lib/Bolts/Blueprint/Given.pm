@@ -15,7 +15,7 @@ use Carp ();
     # Using the usual sugar...
     artifact thing => (
         ...
-        dependencies => {
+        parameters => {
             thing => parameter { # uses blueprint, given
                 isa      => 'Str',
                 required => 1,
