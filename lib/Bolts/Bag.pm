@@ -25,7 +25,7 @@ use Scalar::Util qw( blessed reftype );
             blueprint => $meta->locator->acquire('blueprint', 'factory', {
                 class => 'MyApp::Logger',
             },
-            infer => 'dependencies',
+            infer => 'acquisition',
             scope => $meta->locator->acquire('scope', 'singleton'),
         ));
 

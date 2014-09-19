@@ -12,12 +12,12 @@ use lib "t/lib";
 
     artifact journal_entry => (
         class => 'Test::JournalEntry',
-        infer => 'parameters',
+        infer => 'options',
     );
 
     artifact account => (
         class => 'Test::AccountBook',
-        infer => 'parameters',
+        infer => 'options',
         parameters => {
             journal => builder { [] },
         },
@@ -40,7 +40,7 @@ use lib "t/lib";
 
     artifact general_ledger => (
         class => 'Test::GeneralLedger',
-        infer => 'dependencies',
+        infer => 'acquisition',
     );
 }
 

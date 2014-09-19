@@ -57,7 +57,7 @@ sub _bag_meta {
     artifact logger   => (
         class => 'MyApp::Logger',
         scope => 'singleton',
-        infer => 'dependencies',
+        infer => 'acquisition',
     );
 
     # Later...

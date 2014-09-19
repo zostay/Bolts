@@ -196,7 +196,7 @@ sub _build_injector {
             blueprint => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Parameter::ByPosition',
             ),
-            infer     => 'parameters',
+            infer     => 'options',
             scope     => $prototype,
         ),
     );
@@ -207,7 +207,7 @@ sub _build_injector {
             blueprint => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Parameter::ByPosition',
             ),
-            infer     => 'parameters',
+            infer     => 'options',
             scope     => $prototype,
         ),
     );
@@ -218,7 +218,7 @@ sub _build_injector {
             blueprint => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Store',
             ),
-            infer     => 'parameters',
+            infer     => 'options',
             scope     => $prototype,
         ),
     );

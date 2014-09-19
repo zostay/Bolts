@@ -22,7 +22,7 @@ use Moose::Util ();
 
     artifact thing => (
         class => 'MyApp::Thing',
-        infer => 'parameters',
+        infer => 'options',
     );
 
     package MyApp;

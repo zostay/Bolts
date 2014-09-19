@@ -24,7 +24,7 @@ use Scalar::Util qw( weaken );
             class => 'MyApp::Thing',
         }),
         scope      => $meta->acquire('scope', 'singleton'),
-        infer      => 'dependencies',
+        infer      => 'acquisition',
         parameters => {
             foo => parameter {
                 isa => 'Str',
@@ -99,13 +99,13 @@ This is a setting that tells the artifact what kind of inferrence to perform whe
 
 B<Default.> When this is set, no inferrence is performed. The injectors will be defined according to L</dependencies> only.
 
-=item parameters
+=item options
 
-This option tells the artifact to infer the injection using parameters. When the object is acquired and resolved, the caller will need to pass through any parameters needed for building the object.
+This tells the artifact to infer the injection using the parameters passed to the call to L<Bolts::Role::Locator/acquire>. When the object is acquired and resolved, the caller will need to pass through any options needed for building the object.
 
-=item dependencies
+=item acquisition
 
-This option tells the artifact to infer the injection using acquired artifacts. The acquisition will happen from the bag containing the artifact with paths matching the name of the parameter.
+This tells the artifact to infer the injection using automatically acquired artifacts. The acquisition will happen from the bag containing the artifact with paths matching the name of the parameter.
 
 B<Caution:> The way this work is likely to be customizeable in the future and the default behavior may differ.
 
@@ -115,7 +115,7 @@ B<Caution:> The way this work is likely to be customizeable in the future and th
 
 has infer => (
     is          => 'ro',
-    isa         => enum([qw( none parameters dependencies )]),
+    isa         => enum([qw( none options acquisition )]),
     required    => 1,
     default     => 'none',
 );
@@ -223,7 +223,7 @@ sub infer_injectors {
             my $via      = delete $params{inject_via};
 
             my $blueprint;
-            if ($inference_type eq 'parameters') {
+            if ($inference_type eq 'options') {
                 $blueprint = $meta_loc->acquire('blueprint', 'given', { 
                     required => $required,
                 });
