@@ -1,4 +1,7 @@
 package Bolts::Meta::Locator;
+
+# ABSTRACT: Standard meta locator for Bolts
+
 use Moose;
 
 with qw( Bolts::Role::Locator );
@@ -19,7 +22,59 @@ use Bolts::Scope::Singleton;
 
 use Class::Load;
 
+=head1 DESCRIPTION
+
+This provides the standard meta locator for Bolts. It may be extended by your application to add custom blueprints, scopes, injectors, inferrers, and other objects.
+
+=head1 ROLES
+
+=over
+
+=item *
+
+L<Bolts::Role::Locator>
+
+=back
+
+=head1 ATTRIBUTES
+
+=head2 root
+
+This returns the object itself for L<Bolts::Role::Locator> to use.
+
+=cut
+
 sub root { $_[0] }
+
+=head2 blueprints
+
+This is a bag within the meta locator containing these blueprints.
+
+=head3 acquired
+
+This constructs artifacts by acquisition, via L<Bolts::Blueprint::Acquired>.
+
+=head3 given
+
+This constructs artifacts for injection by pulling values from passed parameters, via L<Bolts::Blueprint::Given>.
+
+=head3 literal
+
+This constructs artifacts using a value defined when the bag is defined, via L<Bolts::Blueprint::Literal>.
+
+=head3 built
+
+This constructs artifacts using a subroutine given when the bag is defined, via L<Bolts::Blueprint::Built>.
+
+=head3 build_injector
+
+This constructs artifacts for injection using a subroutine given when the bag is defined, via L<Bolts::Blueprint::BuiltInjector>.
+
+=head3 factory
+
+This constructs artifacts by calling a class method on a package name, via L<Bolts::Blueprint::Factory>.
+
+=cut
 
 has blueprint => (
     is          => 'ro',
@@ -105,6 +160,16 @@ sub _build_blueprint {
     return $bp->name->new;
 }
 
+=head2 inference
+
+This is a nested array bag containing these inferrers. (Actually, just this inferrer so far.)
+
+=head3 moose
+
+This infers the dependencies a L<Moose> class has by examining the attributes on it's metaclass. This inferer only works with L<Bolts::Blueprint::Factory> blueprints.
+
+=cut
+
 has inference => (
     is          => 'ro',
     isa         => 'ArrayRef',
@@ -126,6 +191,32 @@ sub _build_inference {
         ),
     ];
 }
+
+=head2 injector
+
+This is a nested bag containing dependency injector objects. It contains these injectors.
+
+=head3 parameter_name
+
+Injects by passing named parameters to the blueprint, via L<Bolts::Injector::Parameter::ByName>.
+
+=head3 parameter_position
+
+Injects by passing parameters by position to the blueprint, via L<Bolts::Injector::Parameter::ByPosition>.
+
+=head3 setter
+
+Injects by calling a setter method on the constructed artifact, via L<Bolts::Injector::Setter>.
+
+=head3 store_array
+
+Injects into an array reference by index or push, via L<Bolts::Injector::Store::Array>.
+
+=head3 store_hash
+
+Injects into a hash reference by key, via L<Bolts::Injector::Store::Hash>.
+
+=cut
 
 has injector => (
     is          => 'ro',
@@ -238,6 +329,24 @@ sub _build_injector {
 
     return $bag->name->new;
 }
+
+=head2 scope
+
+Nested bag containing the predefined scopes.
+
+=head3 _
+
+This is the default scope, which is the same as L</prototype>.
+
+=head3 prototype
+
+This is the non-scope scope, which never caches a value and always causes it to constructed on each acquisition, via L<Bolts::Scope::Prototype>.
+
+=head3 singleton
+
+This scopes an artifact to last as long as the bag containing it, via L<Bolts::Scope::Singleton>.
+
+=cut
 
 has scope => (
     is          => 'ro',

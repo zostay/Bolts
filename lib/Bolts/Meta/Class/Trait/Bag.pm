@@ -1,9 +1,23 @@
 package Bolts::Meta::Class::Trait::Bag;
 
+# ABSTRACT: Metaclass role for bags built with Bolts::Bag
+
 use Moose::Role;
 
 use Safe::Isa;
 use Scalar::Util qw( reftype );
+
+=head1 DESCRIPTION
+
+While a bag may be any kind of object, this metaclass role on a bag provides some helpful utilities for creating and managing bags.
+
+=head1 ATTRIBUTES
+
+=head2 such_that_isa
+
+This is a L<Moose::Meta::TypeConstraint> to apply to the L<Bolts::Artifact/isa_type> of all contained artifacts.
+
+=cut
 
 has such_that_isa => (
     is          => 'rw',
@@ -11,16 +25,45 @@ has such_that_isa => (
     predicate   => 'has_such_that_isa',
 );
 
+=head2 such_that_does
+
+This is a L<Moose::Meta::TypeConstraint> to apply to the L<Bolts::Artifact/does_type> of all contained artifacts.
+
+=cut
+
 has such_that_does => (
     is          => 'rw',
     isa         => 'Moose::Meta::TypeConstraint',
     predicate   => 'has_such_that_does',
 );
 
+=head1 METHODS
+
+=head2 is_finished_bag
+
+    my $finished = $meta->is_finished_bag;
+
+This is used to determine if a bag's definition has already been performed and completed. At this time, it's just a synonym for L<Class::MOP::Class/is_immutable>.
+
+=cut
+
 sub is_finished_bag {
     my $meta = shift;
     return $meta->is_immutable;
 }
+
+=head2 add_artifact
+
+    $meta->add_artifact(name => $artifact, {
+        isa  => $isa_type,
+        does => $does_type,
+    });    
+
+Adds an artifact method to the bag with the given C<name>. The C<$artifact> may be an instance of L<Bolts::Role::Artifact>, a code reference to used to define a L<Bolts::Artifact::Thunk> or just another value, which will be wrapped in an anonymous sub and turned into a L<Bolts::Artifact::Thunk>.
+
+The C<isa> and C<does> will be applied to the artifact as appropriate.
+
+=cut
 
 sub add_artifact {
     my ($meta, $method, $value, $such_that) = @_;
@@ -61,6 +104,14 @@ sub add_artifact {
     }
 
 }
+
+=head2 finish_bag
+
+    $meta->finish_bag;
+
+This completes the bag building process and marks the Moose object as immutable. Aft this is called, L</is_finished_bag> returns true.
+
+=cut
 
 sub finish_bag {
     my ($meta) = @_;
