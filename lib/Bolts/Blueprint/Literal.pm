@@ -72,6 +72,14 @@ sub builder {
     $self->value;
 }
 
+=head2 exists
+
+Always returns true.
+
+=cut
+
+sub exists { 1 }
+
 =head2 implied_scope
 
 This is set. A literal blueprint value acts like a global singleton.

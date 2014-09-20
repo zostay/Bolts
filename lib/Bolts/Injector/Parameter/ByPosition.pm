@@ -33,26 +33,15 @@ L<Bolts::Injector>
 
 =head1 METHODS
 
-=head2 pre_inject
+=head2 pre_inject_value
 
 Perform the pre-injection of the parameter by position.
 
 =cut
 
-sub pre_inject {
-    my ($self, $loc, $in_params, $out_params) = @_;
-
-    my $value = $self->get($loc, $in_params);
-
+sub pre_inject_value {
+    my ($self, $loc, $value, $params) = @_;
     push @{ ${ $out_params } }, $value;
 }
-
-=head2 post_inject
-
-No-op.
-
-=cut
-
-sub post_inject { }
 
 __PACKAGE__->meta->make_immutable;

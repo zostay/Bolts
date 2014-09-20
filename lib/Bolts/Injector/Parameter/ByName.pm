@@ -45,45 +45,19 @@ has name => (
     lazy_build  => 1,
 );
 
-=head2 skip_undef
-
-If set, the parameter won't be set if the value is undef. Defaults to true.
-
-=cut
-
-has skip_undef => (
-    is          => 'ro',
-    isa         => 'Bool',
-    required    => 1,
-    default     => 1,
-);
-
 sub _build_name { $_[0]->key }
 
 =head1 METHODS
 
-=head2 pre_inject
+=head2 pre_inject_value
 
 Performs the pre-injection by named parameter.
 
 =cut
 
-sub pre_inject {
-    my ($self, $loc, $in_params, $out_params) = @_;
-
-    my $value = $self->get($loc, $in_params);
-
-    return if $self->skip_undef and not defined $value;
-
-    push @{ $out_params }, $self->name, $value;
+sub pre_inject_value {
+    my ($self, $loc, $value, $params) = @_;
+    push @{ $params }, $self->name, $value;
 }
-
-=head2 post_inject
-
-Noop.
-
-=cut
-
-sub post_inject { }
 
 __PACKAGE__->meta->make_immutable;

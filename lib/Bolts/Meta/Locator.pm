@@ -205,7 +205,7 @@ sub _build_injector {
         setter => Bolts::Artifact->new(
             name      => 'setter',
             blueprint => Bolts::Blueprint::Factory->new(
-                class => 'Bolts::Injector::Parameter::ByPosition',
+                class => 'Bolts::Injector::Setter',
             ),
             infer     => 'options',
             scope     => $prototype,

@@ -4,6 +4,11 @@ package Bolts::Injector;
 
 use Moose::Role;
 
+our @CARP_NOT = qw(
+    Bolts::Injector::Parameter::ByName
+    Bolts::Artifact
+);
+
 =head1 SYNOPSIS
 
     package MyApp::CustomInjector;
@@ -11,19 +16,13 @@ use Moose::Role;
 
     with 'Bolts::Injector';
 
-    sub pre_inject {
-        my ($self, $loc, $in_params, $out_params) = @_;
-
-        my $value = $self->get($loc, $in_params);
-
-        $out_params->set($self->key, $value);
+    sub pre_inject_value {
+        my ($self, $loc, $value, $param) = @_;
+        $param->set($self->key, $value);
     }
 
-    sub post_inject {
-        my ($self, $loc, $in_params, $artifact) = @_;
-
-        my $value = $self->get($loc, $in_params);
-
+    sub post_inject_value {
+        my ($self, $loc, $value, $artifact) = @_;
         $artifact->set($self->key, $value);
     }
 
@@ -108,68 +107,114 @@ has isa => (
     isa         => 'Moose::Meta::TypeConstraint',
 );
 
-=head1 REQUIRED METHODS
+=head1 OVERRIDDEN METHODS
 
-=head2 pre_inject
+=head2 pre_inject_value
 
-    $injector->pre_inject($loc, $in_params, $out_params);
+    $injector->pre_inject_value($loc, $value, $param);
 
 This method is called first, before the artifact has been constructed by the parent blueprint. 
 
-The first two arguments provide the context for the artifact being constructed. The first is the L<Bolts::Role::Locator> rooted at the bag the artifact belongs to and the second is the input options given by the caller during acquisition. You don't need to examine either of these directly. Instead, call L</get>:
+The C<$loc> provides the context for the injector. It is the bag that contains the artifact being constructed. The C<$value> is the value to be injected. The C<$param> is the value to inject into, which will be passed through to the blueprint for use during construction.
 
-    my $value = $injector->get($loc, $in_params);
+If your injector does not provide any pre-injection, do not implement this method.
 
-That C<$value> is the important bit you need. Once you have the C<$value>, inject that value by modifying C<$out_params> with it, which will eventually be passed on the parent blueprint.
+=head2 post_inject_value
 
-If your injector does not provide any pre-injection, implement this with an empty sub-routine:
-
-    sub pre_inject { }
-
-=head2 post_inject
-
-    $injector->post_inject($loc, $in_params, $artifact);
+    $injector->post_inject_value($loc, $value, $artifact);
 
 This method is called after the blueprint has already constructed the object for additional modification. 
 
-The first two arguments provide the context for the artifact being constructed. The first is the L<Bolts::Role::Locator> rooted at the bag the artifact belongs to and the second is the input options given by the caller during acquisition. You don't need to examine either of these directly. Instead, call L</get>:
+The C<$loc> provides the context for the injector. It is the bag that contains the artifact being constructed. The C<$value> is the value to be injected. The C<$artifact> is the constructed artifact to be injected into.
 
-    my $value = $injector->get($loc, $in_params);
-
-That C<$value> is the important bit you need. Once you have the C<$value>, inject that value by modifying C<$artifact> with it.
-
-If your injector does not provide any post-injection, implement this with an empty sub-routine:
-
-    sub post_inject { }
+If your injector does not provide any post-injection, do not implement this method.
 
 =cut
 
-requires 'pre_inject';
-requires 'post_inject';
+# not actually required, we use duck-typing to determine what kind of injection
+# to perform.
+#requires 'pre_inject_value';
+#requires 'post_inject_value';
 
 =head1 METHODS
 
+=head2 pre_inject
+
+   $injector->pre_inject($loc, $options, $param);
+
+Performs the complete process of pre-injection, calling L</pre_inject_value>, if needed.
+
+=cut
+
+sub pre_inject {
+    my ($self, $loc, $options, $param) = @_;
+
+    return unless $self->can('pre_inject_value');
+    return unless $self->exists($loc, $options);
+
+    my $value = $self->get($loc, $options);
+    $self->pre_inject_value($loc, $value, $param);
+}
+
+=head2 post_inject
+
+    $injector->post_inject($loc, $options, $artifact);
+
+Performs the complete process of post-injection, calling L</post_inject_value>, if needed.
+
+=cut
+
+sub post_inject {
+    my ($self, $loc, $options, $artifact) = @_;
+
+    return unless $self->can('post_inject_value');
+    return unless $self->exists($loc, $options);
+
+    my $value = $self->get($loc, $options);
+    $self->post_inject_value($loc, $value, $artifact);
+}
+
+=head2 exists
+
+    my $exists = $injector->exists($loc, $options);
+
+Returns true if the blueprint reports the value for injection exists. Injection is skipped if it does not exists.
+
+=cut
+
+sub exists {
+    my ($self, $loc, $options) = @_;
+
+    my $blueprint = $self->blueprint;
+    my $key       = $self->key;
+
+    return $blueprint->exists($loc, $key, %$options);
+}
+
 =head2 get
 
-    my $value = $injector->get($loc, $in_params);
+    my $value = $injector->get($loc, $options);
 
 These are used by L</pre_inject> and L</post_inject> to acquire the value to be injected.
 
 =cut
 
 sub get {
-    my ($self, $loc, $params) = @_;
+    my ($self, $loc, $options) = @_;
 
     my $blueprint = $self->blueprint;
     my $key       = $self->key;
 
-    my $value = $self->blueprint->get($loc, $key, %$params);
+    my $value = $blueprint->get($loc, $key, %$options);
 
-    my $isa = $self->isa_type;
-    $isa->assert_valid($value) if defined $isa;
-
+    my $isa  = $self->isa_type;
     my $does = $self->does_type;
-    $does->assert_valid($value) if defined $does;
+
+    my $msg;
+       $msg   = $isa->validate($value)  if defined $isa;
+       $msg //= $does->validate($value) if defined $does;
+
+    Carp::croak(qq[Value for injection at key "$key" has the wrong type: $msg]) if $msg;
 
     return $value;
 }

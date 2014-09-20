@@ -27,12 +27,14 @@ use lib "t/lib";
                 isa      => 'Test::AccountBook',
                 required => 1,
             },
-            memo => option {
-                isa      => 'Str',
-            },
             amount => option {
                 isa      => 'Int',
                 required => 1,
+            },
+        },
+        setters => {
+            memo => option {
+                isa      => 'Str',
             },
         },
     );
@@ -94,7 +96,7 @@ eval {
     });
 };
 
-like($@, qr{^Validation failed }, 'parameters check type');
+like($@, qr{^Value for injection }, 'parameters check type');
 
 my $income = $bag->acquire('account', {
     name         => 'Fancycorp',

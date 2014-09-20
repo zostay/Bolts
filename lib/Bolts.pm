@@ -296,6 +296,17 @@ sub artifact {
         }
     }
 
+    if (defined $params{setters}) {
+        my $setters = delete $params{setters};
+
+        for my $key (keys %$setters) {
+            push @injectors, _injector(
+                $meta, 'setters', 'setter',
+                $key, $setters->{$key},
+            );
+        }
+    }
+
     # TODO Remember the service for introspection
 
     my $scope_name = delete $params{scope} // '_';

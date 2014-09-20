@@ -105,4 +105,12 @@ sub builder {
     }
 }
 
+=head2 exists
+
+Always returns true.
+
+=cut
+
+sub exists { 1 }
+
 __PACKAGE__->meta->make_immutable;

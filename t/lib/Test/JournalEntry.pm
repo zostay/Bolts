@@ -22,7 +22,7 @@ has account => (
 );
 
 has memo => (
-    is          => 'ro',
+    is          => 'rw',
     isa         => 'Str',
 );
 

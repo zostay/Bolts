@@ -22,6 +22,15 @@ L<Bolts::Blueprint>
 
 =back
 
+=head1 REQUIRED METHODS
+
+=head2 exists
+
+    my $exists = $blueprint->exists($bag, $name, %params);
+
+Given a set of parameters, this returns whether or not the value provided by the blueprint exists or not. This is used to determine whether or not the injector should even be run.
+
 =cut
 
+requires 'exists'; 
 1;

@@ -329,11 +329,14 @@ sub get {
     # blueprints to be handled when such checks can be sensibly handled
     # ahead of time.
 
-    my $isa = $self->isa_type;
-    $isa->assert_valid($artifact) if defined $isa;
-
+    my $isa  = $self->isa_type;
     my $does = $self->does_type;
-    $does->assert_valid($artifact) if defined $does;
+
+    my $msg;
+       $msg   = $isa->validate($artifact)  if defined $isa;
+       $msg //= $does->validate($artifact) if defined $does;
+
+    Carp::croak(qq[Constructed artifact named "$name" has the wrong type: $msg]) if $msg;
 
     return $artifact;
 }

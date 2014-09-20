@@ -89,6 +89,20 @@ sub builder {
     return $params{ $name };
 }
 
+=head2 exists
+
+Returns true when the parameters contains the named key and when L</required>
+is set to true.
+
+=cut
+
+sub exists {
+    my ($self, $bag, $name, %params) = @_;
+
+    return 1 if $self->required;
+    return exists $params{ $name };
+}
+
 # sub inline_get {
 #     return q[$artifact = $self->_].$name.q[;];
 # }
