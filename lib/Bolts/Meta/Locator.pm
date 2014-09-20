@@ -213,10 +213,21 @@ sub _build_injector {
     );
 
     $bag->add_artifact(
-        store => Bolts::Artifact->new(
-            name      => 'store',
+        store_array => Bolts::Artifact->new(
+            name      => 'store_array',
             blueprint => Bolts::Blueprint::Factory->new(
-                class => 'Bolts::Injector::Store',
+                class => 'Bolts::Injector::Store::Array',
+            ),
+            infer     => 'options',
+            scope     => $prototype,
+        ),
+    );
+
+    $bag->add_artifact(
+        store_hash => Bolts::Artifact->new(
+            name      => 'store_hash',
+            blueprint => Bolts::Blueprint::Factory->new(
+                class => 'Bolts::Injector::Store::Hash',
             ),
             infer     => 'options',
             scope     => $prototype,

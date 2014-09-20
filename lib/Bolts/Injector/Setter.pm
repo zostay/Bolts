@@ -15,10 +15,30 @@ use Scalar::Util;
 
     artifact thing => (
         class => 'MyApp::Thing',
-        injectors => [
-            
-        ],
+        setters => {
+            set_foo => dep('other_thing'),
+        },
     );
+
+=head1 DESCRIPTION
+
+This controls injection by setter, which causes a method to be called on the constructed artifact with the value to be injected.
+
+=head1 ROLES
+
+=over
+
+=item *
+
+L<Bolts::Injector>
+
+=back
+
+=head1 ATTRIBUTES
+
+=head2 name
+
+This is the name of the method to call during injection. It defaults to L<Bolts::Injector/key>.
 
 =cut
 
@@ -30,12 +50,13 @@ has name => (
 
 sub _build_name { $_[0]->key }
 
-# has skip_undef => (
-#     is          => 'ro',
-#     isa         => 'Bool',
-#     required    => 1,
-#     default     => 1,
-# );
+=head1 METHODS
+
+=head2 post_inject_value
+
+Performs the injection into the setter.
+
+=cut
 
 sub post_inject_value {
     my ($self, $loc, $value, $object) = @_;

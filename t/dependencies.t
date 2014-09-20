@@ -3,7 +3,7 @@ use v5.10;
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 20;
 use lib "t/lib";
 
 {
@@ -77,10 +77,58 @@ use lib "t/lib";
             split     => dep('empty_list'),
         },
     );
+
+    artifact array_indexes => (
+        builder => sub { [ 'test', 'test' ] },
+        indexes => [ 
+            1 => value 'foo',
+            4 => value 'bar',
+            5 => value 'baz',
+            7 => value 'qux',
+        ],
+    );
+
+    artifact array_push => (
+        builder => sub { [ 'test', 'test' ] },
+        push => [ 
+            value 'foo',
+            value 'bar',
+            value 'baz',
+            value 'qux',
+        ],
+    );
+
+    artifact hash => (
+        builder => sub { +{ foo => 1, test => 2 } },
+        keys => {
+            foo => value 42,
+            bar => value 43,
+            baz => value 94,
+            qux => value 107,
+        },
+    );
 }
 
 my $bag = Test::Artifacts->new;
 isa_ok($bag, 'Test::Artifacts');
+
+# And now for something completely different...
+{
+    my $a1 = $bag->acquire('array_indexes');
+    is_deeply($a1, [ 'test', 'foo', undef, undef, 'bar', 'baz', undef, 'qux' ], 'array index injection is ok');
+
+    my $a2 = $bag->acquire('array_push');
+    is_deeply($a2, [ qw( test test foo bar baz qux ) ], 'array push injection is ok');
+
+    my $h = $bag->acquire('hash');
+    is_deeply($h, {
+        test => 2,
+        foo  => 42,
+        bar  => 43,
+        baz  => 94,
+        qux  => 107,
+    }, 'hash key injection is ok');
+}
 
 my $bank = $bag->acquire('account', {
     name         => 'Millionth Bank',

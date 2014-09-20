@@ -35,7 +35,7 @@ Moose::Exporter->setup_import_methods(
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
     with_meta => [ qw(
-        artifact bag builder contains dep option such_that_each
+        artifact bag builder contains dep option such_that_each value
     ) ],
     also => 'Moose',
 );
@@ -178,31 +178,27 @@ In addition to the options above, you may also specify the scope. This is usuall
 sub _injector {
     my ($meta, $where, $type, $key, $params) = @_;
 
-    my ($blueprint, $isa, $does);
+    my %params;
+
     if ($params->$_can('does') and $params->$_does('Bolts::Blueprint')) {
-        $blueprint = $params;
+        %params = { blueprint => $params };
     }
     else {
-        $blueprint = $params->{blueprint} if exists $params->{blueprint};
-        $isa       = $params->{isa}       if exists $params->{isa};
-        $does      = $params->{does}      if exists $params->{does};
+        %params = %$params;
     }
 
     Carp::croak("invalid blueprint in $where $key")
-        unless defined $blueprint 
-           and $blueprint->$_does('Bolts::Blueprint::Role::Injector');
+        unless $params{blueprint}->$_can('does')
+           and $params{blueprint}->$_does('Bolts::Blueprint::Role::Injector');
 
-    my %other_params;
-    $other_params{isa}  = Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($isa)
-        if defined $isa;
-    $other_params{does} = Moose::Util::TypeConstraints::find_or_create_does_type_constraint($does)
-        if defined $does;
+    $params{isa}  = Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($params{isa})
+        if defined $params{isa};
+    $params{does} = Moose::Util::TypeConstraints::find_or_create_does_type_constraint($params{does})
+        if defined $params{does};
 
-    return $meta->acquire('injector', $type, {
-        key       => $key,
-        blueprint => $blueprint,
-        %other_params,
-    });
+    $params{key} = $key;
+
+    return $meta->acquire('injector', $type, \%params);
 }
 
 # TODO This sugar requires special knowledge of the built-in blueprint
@@ -307,6 +303,47 @@ sub artifact {
         }
     }
 
+    if (defined $params{indexes}) {
+        my $indexes = delete $params{indexes};
+
+        while (my ($index, $def) = splice @$indexes, 0, 2) {
+            if (!Scalar::Util::blessed($def) && Scalar::Util::reftype($def) eq 'HASH') {
+                $def->{position} //= $index;
+            }
+
+            push @injectors, _injector(
+                $meta, 'indexes', 'store_array',
+                $index, $def,
+            );
+        }
+    }
+
+    if (defined $params{push}) {
+        my $push = delete $params{push};
+
+        my $i = 0;
+        for my $def (@$push) {
+            $i++;
+            my $key = $def->{key} // $i;
+
+            push @injectors, _injector(
+                $meta, 'push', 'store_array',
+                $key, $def,
+            );
+        }
+    }
+
+    if (defined $params{keys}) {
+        my $keys = delete $params{keys};
+
+        for my $key (keys %$keys) {
+            push @injectors, _injector(
+                $meta, 'keys', 'store_hash',
+                $key, $keys->{$key},
+            );
+        }
+    }
+
     # TODO Remember the service for introspection
 
     my $scope_name = delete $params{scope} // '_';
@@ -399,9 +436,11 @@ sub builder(&) {
     my ($meta, $code) = @_;
     $meta = _bag_meta($meta);
 
-    return $meta->acquire('blueprint', 'built_injector', {
-        builder => $code,
-    });
+    return {
+        blueprint => $meta->acquire('blueprint', 'built_injector', {
+            builder => $code,
+        }),
+    };
 }
 
 =head2 dep
@@ -423,9 +462,11 @@ sub dep($) {
     my ($meta, @path) = @_;
     $meta = _bag_meta($meta);
 
-    return $meta->acquire('blueprint', 'acquired', {
-        path => \@path,
-    });
+    return {
+        blueprint => $meta->acquire('blueprint', 'acquired', {
+            path => \@path,
+        }),
+    };
 }
 
 =head2 option
@@ -479,9 +520,11 @@ during injection.
 sub value($) {
     my ($meta, $value) = @_;
 
-    return $meta->acquire('blueprint', 'literal', {
-        value => $value,
-    });
+    return {
+        blueprint => $meta->acquire('blueprint', 'literal', {
+            value => $value,
+        }),
+    };
 }
 
 =head1 GLOBALS
