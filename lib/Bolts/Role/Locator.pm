@@ -1,4 +1,7 @@
 package Bolts::Role::Locator;
+
+# ABSTRACT: Interface for locating artifacts in a bag
+
 use Moose::Role;
 
 use Bolts::Locator;
@@ -7,7 +10,29 @@ use Carp ();
 use Safe::Isa;
 use Scalar::Util ();
 
+=head1 DESCRIPTION
+
+This is the interface that any locator must implement. A locator's primary job is to provide a way to find artifacts within a bag or selection of bags. This performs the acquisition and resolution process. This actually also implements everything needed for the process except for the L</root>.
+
+=head1 REQUIRED METHODS
+
+=head2 root
+
+This is the object to use as the bag to start searching. It may be an object, a reference to an array, or a reference to a hash.
+
+=cut
+
 requires 'root';
+
+=head1 METHODS
+
+=head2 resolve
+
+    my $resolved_artifact = $loc->resolve($bag, $artifact, \%options);
+
+After the artifact has been found, this method resolves the a partial artifact implementing the L<Bolts::Role::Artifact> and turns it into the complete artifact.
+
+=cut
 
 sub resolve {
     my ($self, $bag, $item, $parameters) = @_;
@@ -18,6 +43,16 @@ sub resolve {
 
     return $item;
 }
+
+=head2 acquire
+
+    my $artifact = $loc->acquire(\@path);
+
+Given a C<@path> of symbol names to traverse, this goes through each artifact in turn, resolves it, if necessary, and then continues to the next path component.
+
+When complete, the complete, resolved artifact found is returned.
+
+=cut
 
 sub acquire {
     my ($self, @path) = @_;
@@ -43,6 +78,14 @@ sub acquire {
 
     return $item;
 }
+
+=head2 get
+
+    my $artifact = $log->get($bag, $component, $current_path)
+
+Given a bag and a single symbol name as the next path component to find during acquisition it returns the artifact (possibly still needing resolution).
+
+=cut
 
 sub get {
     my ($self, $bag, $component, $current_path) = @_;
@@ -78,6 +121,16 @@ sub get {
         Carp::croak(qq{not able to acquire artifact for [$current_path "$component"]});
     }
 }
+
+=head2 acquire_all
+
+    my @artifacts = @{ $loc->acquire_all(\@path) };
+
+This is similar to L<acquire>, but if the last bag is a reference to an array, then all the artifacts within that bag are acquired, resolved, and returned as a reference to an array.
+
+If the last item found at the path is not an array, it returns an empty list.
+
+=cut
 
 sub acquire_all {
     my ($self, @path) = @_;
