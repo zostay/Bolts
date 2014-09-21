@@ -52,10 +52,4 @@ sub put {
     return;
 }
 
-=head1 CAVEAT
-
-B<Warning:> This currently uses an inside-out hash for caching, which is never destroyed. That's a pretty terrible memory leak that needs to be corrected.
-
-=cut
-
 __PACKAGE__->meta->make_immutable;
