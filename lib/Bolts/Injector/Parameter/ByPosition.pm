@@ -41,7 +41,7 @@ Perform the pre-injection of the parameter by position.
 
 sub pre_inject_value {
     my ($self, $loc, $value, $params) = @_;
-    push @{ ${ $params } }, $value;
+    push @{ $params }, $value;
 }
 
 __PACKAGE__->meta->make_immutable;
