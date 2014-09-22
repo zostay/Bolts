@@ -17,7 +17,7 @@ use Carp ();
         ...
         parameters => {
             thing => builder {
-                my ($self, $bag, %params) = @_;
+                my ($self, $bag, $name, %params) = @_;
                 return MyApp::Thing->new(%params);
             },
         },
@@ -33,7 +33,7 @@ use Carp ();
                 key       => 'thing',
                 blueprint => $meta->locator->acquire('blueprint', 'built_injector', {
                     builder => sub {
-                        my ($self, $bag, %params) = @_;
+                        my ($self, $bag, $name, %params) = @_;
                         return MyApp::Thing->new(%params);
                     },
                 }),
@@ -46,8 +46,6 @@ use Carp ();
 This is a blueprint for using a subroutine to fill in an injected artifact dependency.
 
 This differs from L<Bolts::Blueprint::Built> in that it implements L<Bolts::Blueprint::Role::Injector>, which tags this has only accepting named parameters to the builder method, which is required during injection.
-
-B<Caution:> As of this writing the builder subroutine receives only some of the arguments normally passed to the blueprint builder method. This will probably change.
 
 =head1 ROLES
 
@@ -86,7 +84,7 @@ This executes the subroutine in the C<builder> attribute.
 
 sub builder {
     my ($self, $bag, $name, %params) = @_;
-    $self->call_builder($bag, %params);
+    $self->call_builder($bag, $name, %params);
 }
 
 =head2 exists

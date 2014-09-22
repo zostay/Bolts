@@ -15,7 +15,7 @@ use Carp ();
     # Using the usual sugar...
     artifact thing => (
         builder => sub {
-            my ($self, $bag, @params) = @_;
+            my ($self, $bag, $name, @params) = @_;
             return MyApp::Thing->new(@params);
         },
     );
@@ -27,7 +27,7 @@ use Carp ();
         name      => 'thing',
         blueprint => $meta->locator->acquire('blueprint', 'built', {
             builder => sub {
-                my ($self, $bag, @params) = @_;
+                my ($self, $bag, $name, @params) = @_;
                 return MyApp::Thing->new(@params);
             },
         }),
@@ -37,8 +37,6 @@ use Carp ();
 =head1 DESCRIPTION
 
 This is a blueprint for constructing an artifact using a custom subroutine. This is handy for gluing anything to anything.
-
-B<Caution:> As of this writing the builder subroutine receives only some of the arguments normally passed to the blueprint builder method. This will probably change.
 
 =head1 ROLES
 
@@ -78,7 +76,7 @@ This executes the subroutine in the C<builder> attribute.
 
 sub builder {
     my ($self, $bag, $name, @params) = @_;
-    $self->call_builder($bag, @params);
+    $self->call_builder($bag, $name, @params);
 }
 
 __PACKAGE__->meta->make_immutable;
