@@ -385,8 +385,8 @@ sub bag {
     $meta->add_artifact($name, sub { $def });
 }
 
-sub contains(&) {
-    my ($parent_meta, $code) = @_;
+sub contains(&;$) {
+    my ($parent_meta, $code, $such_that_each) = @_;
 
     my $meta = _bag_meta($parent_meta);
 
@@ -397,6 +397,7 @@ sub contains(&) {
 
         my $bag_meta = Bolts::Bag->start_bag(
             package => "${parent}::$name",
+            ($such_that_each ? (such_that_each => $such_that_each) : ()),
         );
         push @BAG_META, $bag_meta;
 
@@ -409,12 +410,22 @@ sub contains(&) {
     };
 }
 
-sub such_that_each(@) {
-    my ($meta, %params) = @_;
+=head2 such_that_each
 
-    $meta = _bag_meta($meta);
+    bag 'name' => contains {
+        artifact 'child_name' => 'value';
 
-    ...
+    } such_that_each {
+        isa => 'Str',
+    };
+
+Causes every artifact within the bag to have the same type constraints, which is handy in some cases. The first argument is a hash that may contain an C<isa> key and a C<does> key, which will be applid to each of the artifacts within. The second argument is the bag definition, which should be built using C<contains> as shown in the description of L</bag>.
+
+=cut
+
+sub such_that_each($) {
+    my ($meta, $params) = @_;
+    return $params;
 }
 
 =head2 builder
@@ -534,6 +545,12 @@ sub value($) {
 B<Subject to Change:> This is the name of the locator to use for locating the meta objects needed to configure within Bolts. The default is L<Bolts::Meta::Locator>, which defines the standard set of scopes, blueprints, etc.
 
 This is variable likely to change or disappear in the future.
+
+=begin Pod::Coverage
+
+    contains
+
+=end Pod::Coverage
 
 =cut
 

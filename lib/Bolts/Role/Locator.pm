@@ -26,24 +26,6 @@ requires 'root';
 
 =head1 METHODS
 
-=head2 resolve
-
-    my $resolved_artifact = $loc->resolve($bag, $artifact, \%options);
-
-After the artifact has been found, this method resolves the a partial artifact implementing the L<Bolts::Role::Artifact> and turns it into the complete artifact.
-
-=cut
-
-sub resolve {
-    my ($self, $bag, $item, $parameters) = @_;
-
-    return $item->get($bag, %$parameters)
-        if $item->$_can('does')
-       and $item->$_does('Bolts::Role::Artifact');
-
-    return $item;
-}
-
 =head2 acquire
 
     my $artifact = $loc->acquire(\@path);
@@ -69,7 +51,7 @@ sub acquire {
         my $component = shift @path;
 
         my $bag = $item;
-        $item = $self->get($bag, $component, $current_path);
+        $item = $self->_get_from($bag, $component, $current_path);
         $item = $self->resolve($bag, $item, $parameters);
 
         $current_path .= ' ' if $current_path;
@@ -77,49 +59,6 @@ sub acquire {
     }
 
     return $item;
-}
-
-=head2 get
-
-    my $artifact = $log->get($bag, $component, $current_path)
-
-Given a bag and a single symbol name as the next path component to find during acquisition it returns the artifact (possibly still needing resolution).
-
-=cut
-
-sub get {
-    my ($self, $bag, $component, $current_path) = @_;
-
-    Carp::croak("unable to acquire artifact for [$current_path]")
-        unless defined $bag;
-
-    # A bag can be any blessed object...
-    if (Scalar::Util::blessed($bag)) {
-
-        # So long as it has that method
-        if ($bag->can($component)) {
-            return $bag->$component;
-        }
-        
-        else {
-            Carp::croak(qq{no artifact named "$component" at [$current_path]});
-        }
-    }
-
-    # Or any unblessed hash
-    elsif (ref $bag eq 'HASH') {
-        return $bag->{ $component };
-    }
-
-    # Or any unblessed array
-    elsif (ref $bag eq 'ARRAY') {
-        return $bag->[ $component ];
-    }
-
-    # But nothing else...
-    else {
-        Carp::croak(qq{not able to acquire artifact for [$current_path "$component"]});
-    }
 }
 
 =head2 acquire_all
@@ -149,6 +88,74 @@ sub acquire_all {
 
     else {
         return [];
+    }
+}
+
+=head2 resolve
+
+    my $resolved_artifact = $loc->resolve($bag, $artifact, \%options);
+
+After the artifact has been found, this method resolves the a partial artifact implementing the L<Bolts::Role::Artifact> and turns it into the complete artifact.
+
+=cut
+
+sub resolve {
+    my ($self, $bag, $item, $parameters) = @_;
+
+    return $item->get($bag, %$parameters)
+        if $item->$_can('does')
+       and $item->$_does('Bolts::Role::Artifact');
+
+    return $item;
+}
+
+=head2 get
+
+    my $artifact = $log->get($component);
+
+Given a single symbol name as the path component to find during acquisition it returns the partial artifact for it. This artifact is incomplete and still needs to be resolved.
+
+=cut
+
+sub get {
+    my ($self, $component) = @_;
+    return $self->_get_from($self->root, $component);
+}
+
+sub _get_from {
+    my ($self, $bag, $component, $current_path) = @_;
+    $current_path //= '';
+
+    Carp::croak("unable to acquire artifact for [$current_path]")
+        unless defined $bag;
+
+    # A bag can be any blessed object...
+    if (Scalar::Util::blessed($bag)) {
+
+        # So long as it has that method
+        if ($bag->can($component)) {
+            return $bag->$component;
+        }
+        
+        else {
+            Carp::croak(qq{no artifact named "$component" at [$current_path]});
+        }
+    }
+
+    # Or any unblessed hash
+    elsif (ref $bag eq 'HASH') {
+        return $bag->{ $component };
+    }
+
+    # Or any unblessed array
+    elsif (ref $bag eq 'ARRAY') {
+        return $bag->[ $component ];
+    }
+
+    # But nothing else...
+    else {
+        my $path = join ' ', grep defined, $current_path, $component;
+        Carp::croak(qq{not able to acquire artifact for [$path]});
     }
 }
 
