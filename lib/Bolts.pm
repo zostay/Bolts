@@ -66,6 +66,8 @@ sub _bag_meta {
 
 =head1 DESCRIPTION
 
+B<Caution:> I<< This is an B<experimental> API. Some aspects of the API may change, possibly drastically, from version to version. That probably won't happen, but please contact me via email if you plan to use this in something and want to know what might change. Pay close attention to any B<Caution> remarks in the documentation. >>
+
 This is yet another Inversion of Control framework for Perl. This one is based upon a combination of L<Bread::Board>, concepts from the Spring framework, and a good mix of my own ideas and modifications after spending a few years using L<Moose> and Bread::Board.
 
 =head2 Inversion of Control

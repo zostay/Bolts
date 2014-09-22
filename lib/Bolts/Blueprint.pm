@@ -79,7 +79,7 @@ sub get {
     $self->builder($bag, $name, @params);
 }
 
-sub init_meta { }
+#sub init_meta { }
 
 =head2 implied_scope
 
