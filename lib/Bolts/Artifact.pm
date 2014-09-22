@@ -237,7 +237,7 @@ sub infer_injectors {
 
             $params{blueprint} = $blueprint;
 
-            my $injector = $meta_loc->acquire('injector', $via, \%params);
+            my $injector = $meta_loc->acquire(@$via, \%params);
             unless (defined $injector) {
                 Carp::carp(qq[Unable to acquire an injector for "$via".]);
                 next PARAMETER;

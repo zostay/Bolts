@@ -22,21 +22,21 @@ use Moose::Role;
         if ($type eq 'foo') {
             push @parameters, {
                 key        => 'foo',
-                inject_via => 'setter',
+                inject_via => [ 'injector, 'setter' ],
             };
             push @parameters, {
                 key        => 'bar',
-                inject_via => 'parameter_name',
+                inject_via => [ 'injector', 'parameter_name' ],
             };
         }
         elsif ($type eq 'bar') {
             push @parameters, {
                 key        => 'bar',
-                inject_via => 'setter',
+                inject_via => [ 'injector', 'setter' ],
             };
             push @parameters, {
                 key        => 'foo',
-                inject_via => 'parameter_name',
+                inject_via => [ 'injector', 'parameter_name' ],
             };
         }
         else {
@@ -66,9 +66,7 @@ This is the name to give the parameter for injection.
 
 =item inject_via
 
-This is the name of the injector to use, found within the meta locator, usually L<Bolts::Meta::Locator>, under the "injector" key.
-
-L<Caution:> This will likely change to a full-blown path within the locator or something. This setting is also slightly fragile as it depends on the particular configuration of the locator, so it might change to something else entirely.
+This is the full path to the injector to qcquire, found within the meta locator, usually L<Bolts::Meta::Locator>, usually under the "injector" key.
 
 =item isa
 

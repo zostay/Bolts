@@ -97,7 +97,7 @@ sub infer {
 
         push @parameters, {
             key        => $key,
-            inject_via => $preferred_injector,
+            inject_via => [ 'injector', $preferred_injector ],
             isa        => $attr->type_constraint,
             required   => $attr->is_required,
         };
