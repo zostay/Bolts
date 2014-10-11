@@ -1,5 +1,19 @@
 {{$NEXT}}
 
+    * Replaced Bolts::Role::Locator with a version that only declares the
+      required parameters.
+    * Copied the original Bolts::Role::Locator to Bolts::Role::RootLocator and
+      made it implement Bolts::Role::Locator
+    * Converted Bolts::Role::SelfLocator, Bolts::Locator, and
+      Bolts::Meta::Locator to use Bolts::Role::RootLocator.
+    * Made Bolts::Meta::Class::Trait::Locator into an implementation of
+      Bolts::Role::Locator.
+    * Added a new required meta_locator attribute to Bolts::Artifact
+    * Changed blueprint, scope, and injectors so that they can take a special
+      initializer argument during construction that takes the form of an array
+      reference that can be used to acquire the blueprint, scope, and injectors
+      (respectively) rather than require they be delivered directly by the
+      caller. This is much nicer to use directly now.
     * Modify locator_for() and meta_locator_for() in Bolts::Util to return
       the same locator object for each invocation after the first for a given
       object reference.

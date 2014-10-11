@@ -4,7 +4,7 @@ package Bolts::Meta::Locator;
 
 use Moose;
 
-with qw( Bolts::Role::Locator );
+with qw( Bolts::Role::RootLocator );
 
 use Bolts::Artifact;
 use Bolts::Artifact::Thunk;
@@ -32,7 +32,7 @@ This provides the standard meta locator for Bolts. It may be extended by your ap
 
 =item *
 
-L<Bolts::Role::Locator>
+L<Bolts::Role::RootLocator>
 
 =back
 
@@ -183,11 +183,12 @@ sub _build_inference {
 
     return [
         Bolts::Artifact->new(
-            name      => 'moose',
-            blueprint => Bolts::Blueprint::Factory->new(
-                class => 'Bolts::Inference::Moose',
+            meta_locator => $self,
+            name         => 'moose',
+            blueprint    => Bolts::Blueprint::Factory->new(
+                class    => 'Bolts::Inference::Moose',
             ),
-            scope     => $singleton,
+            scope        => $singleton,
         ),
     ];
 }
@@ -230,12 +231,13 @@ sub _build_injector {
     my $prototype = $self->scope->prototype->get($self->scope);
 
     my $parameter_name = Bolts::Artifact->new(
-        name      => 'parameter_name',
-        blueprint => Bolts::Blueprint::Factory->new(
-            class => 'Bolts::Injector::Parameter::ByName',
+        meta_locator => $self,
+        name         => 'parameter_name',
+        blueprint    => Bolts::Blueprint::Factory->new(
+            class    => 'Bolts::Injector::Parameter::ByName',
         ),
-        scope     => $prototype,
-        injectors => [
+        scope        => $prototype,
+        injectors    => [
             Bolts::Injector::Parameter::ByName->new(
                 key      => 'key',
                 blueprint => Bolts::Blueprint::Given->new(
@@ -283,45 +285,49 @@ sub _build_injector {
     
     $bag->add_artifact(
         parameter_position => Bolts::Artifact->new(
-            name      => 'parameter_position',
-            blueprint => Bolts::Blueprint::Factory->new(
+            meta_locator => $self,
+            name         => 'parameter_position',
+            blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Parameter::ByPosition',
             ),
-            infer     => 'options',
-            scope     => $prototype,
+            infer        => 'options',
+            scope        => $prototype,
         ),
     );
 
     $bag->add_artifact(
         setter => Bolts::Artifact->new(
-            name      => 'setter',
-            blueprint => Bolts::Blueprint::Factory->new(
+            meta_locator => $self,
+            name         => 'setter',
+            blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Setter',
             ),
-            infer     => 'options',
-            scope     => $prototype,
+            infer        => 'options',
+            scope        => $prototype,
         ),
     );
 
     $bag->add_artifact(
         store_array => Bolts::Artifact->new(
-            name      => 'store_array',
-            blueprint => Bolts::Blueprint::Factory->new(
+            meta_locator => $self,
+            name         => 'store_array',
+            blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Store::Array',
             ),
-            infer     => 'options',
-            scope     => $prototype,
+            infer        => 'options',
+            scope        => $prototype,
         ),
     );
 
     $bag->add_artifact(
         store_hash => Bolts::Artifact->new(
-            name      => 'store_hash',
-            blueprint => Bolts::Blueprint::Factory->new(
+            meta_locator => $self,
+            name         => 'store_hash',
+            blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Store::Hash',
             ),
-            infer     => 'options',
-            scope     => $prototype,
+            infer        => 'options',
+            scope        => $prototype,
         ),
     );
 
@@ -361,11 +367,12 @@ sub _build_scope {
     my $prototype = Bolts::Scope::Prototype->new;
 
     my $prototype_artifact = Bolts::Artifact->new(
-        name      => 'prototype',
-        blueprint => Bolts::Blueprint::Literal->new(
+        meta_locator => $self,
+        name         => 'prototype',
+        blueprint    => Bolts::Blueprint::Literal->new(
             value => $prototype,
         ),
-        scope     => $singleton,
+        scope        => $singleton,
     );
 
     my $bag = Bolts::Bag->start_bag(
@@ -383,11 +390,12 @@ sub _build_scope {
 
     $bag->add_artifact(
         singleton => Bolts::Artifact->new(
-            name      => 'singleton',
-            blueprint => Bolts::Blueprint::Literal->new(
+            meta_locator => $self,
+            name         => 'singleton',
+            blueprint    => Bolts::Blueprint::Literal->new(
                 value => $singleton,
             ),
-            scope     => $singleton,
+            scope        => $singleton,
         ),
     );
 

@@ -11,7 +11,7 @@ use Carp ();
 use List::MoreUtils qw( all );
 use Moose::Util::TypeConstraints;
 use Safe::Isa;
-use Scalar::Util qw( weaken );
+use Scalar::Util qw( weaken reftype );
 
 =head1 SYNOPSIS
 
@@ -19,16 +19,17 @@ use Scalar::Util qw( weaken );
     my $meta = Bolts::Bag->start_bag;
 
     my $artifact = Bolts::Artifact->new(
-        name       => 'key',
-        blueprint  => $meta->acquire('blueprint', 'factory', {
+        meta_locator => $meta,
+        name         => 'key',
+        blueprint    => [ 'blueprint', 'factory', {
             class => 'MyApp::Thing',
-        }),
-        scope      => $meta->acquire('scope', 'singleton'),
-        infer      => 'acquisition',
-        parameters => {
-            foo => option {
+        } ],
+        scope        => [ 'scope', 'singleton' ],
+        infer        => 'acquisition',
+        parameters   => {
+            foo => [ 'blueprint', 'given', {
                 isa => 'Str',
-            },
+            } ],
             bar => value 42,
         },
     );
@@ -49,15 +50,24 @@ L<Bolts::Role::Artifact>
 
 =head1 ATTRIBUTES
 
+=head2 meta_locator
+
+B<Required.> This sets the meta locator object for the bag. The best way to provide this is to use the L<Bolts::Util/meta_locator_for> function to locate the meta locator for an object. The object must be an instance of L<Bolts::Role::Locator> and should be associated with the bag the artifact will be placed within.
+
+=cut
+
+has meta_locator => (
+    is          => 'ro',
+    does        => 'Bolts::Role::Locator',
+    required    => 1,
+    weak_ref    => 1,
+);
+
 =head2 name
 
 B<Required.> This sets the name of the artifact that is being created. This is passed through as part of scope resolution (L<Bolts::Scope>) and blueprint construction (L<Bolts::Blueprint>).
 
 =cut
-
-subtype 'Bolts::Injector::List',
-     as 'ArrayRef',
-  where { all { $_->$_does('Bolts::Injector') } @$_ };
 
 has name => (
     is          => 'ro',
@@ -69,25 +79,79 @@ has name => (
 
 B<Required.> This sets the L<Bolts::Blueprint> used to construct the artifact.
 
+Instead of passing the blueprint object in directly, you can provide an initializer in an array reference, similar to what you would pass to C<acquire> to get the blueprint from the meta-locator, e.g.:
+
+  blueprint => [ 'blueprint', 'acquire', {
+      path => [ 'foo' ],
+  } ],
+
 =cut
+
+has blueprint_initializer => (
+    is          => 'ro',
+    required    => 1,
+    init_arg    => 'blueprint',
+);
 
 has blueprint => (
     is          => 'ro',
     does        => 'Bolts::Blueprint',
-    required    => 1,
+    lazy_build  => 1,
+    init_arg    => undef,
 );
+
+sub _build_blueprint {
+    my $self = shift;
+
+    my $init = $self->blueprint_initializer;
+    if ($init->$_can('does') && $init->$_does('Bolts::Blueprint')) {
+        return $init;
+    }
+    elsif (reftype $init eq 'ARRAY') {
+        return $self->meta_locator->acquire(@$init);
+    }
+    else {
+        Carp::croak("unknown blueprint initializer type");
+    }
+}
 
 =head2 scope
 
 B<Required.> This sets the L<Bolts::Scope> used to manage the object's lifecycle.
 
+Instead of passing the scope object in directly, you can provide an initializer in an array reference, similar to what you would pass to C<acquire> to get the scope from the meta-locator, e.g.:
+
+  scope => [ 'scope', 'singleton' ]
+
 =cut
+
+has scope_initializer => (
+    is          => 'ro',
+    required    => 1,
+    init_arg    => 'scope',
+);
 
 has scope => (
     is          => 'ro',
     does        => 'Bolts::Scope',
-    required    => 1,
+    lazy_build  => 1,
+    init_arg    => undef,
 );
+
+sub _build_scope {
+    my $self = shift;
+
+    my $init = $self->scope_initializer;
+    if ($init->$_can('does') && $init->$_does('Bolts::Scope')) {
+        return $init;
+    }
+    elsif (reftype $init eq 'ARRAY') {
+        return $self->meta_locator->acquire(@$init);
+    }
+    else {
+        Carp::croak("unknown scope initializer type");
+    }
+}
 
 =head2 infer
 
@@ -141,19 +205,65 @@ has inference_done => (
 
 This is an array of L<Bolts::Injector>s, which are used to inject values into or after the construction process. Anything set here will take precedent over inferrence.
 
+Instead of passing the array of injector objects in directly, you can provide an array of initializers, each as an array reference, similar to what you would pass to C<acquire> for each to get each injector from the meta-locator, e.g.:
+
+  injector => [
+      [ 'injector', 'parameter_name', {
+          key       => 'foo',
+          blueprint => $meta_locator->acquire('blueprint', 'literal', {
+              value => 42,
+          }),
+      } ],
+  ]
+
 =cut
+
+subtype 'Bolts::Injector::List',
+     as 'ArrayRef',
+  where { all { $_->$_does('Bolts::Injector') } @$_ };
+
+has injectors_initializer => (
+    is          => 'ro',
+    isa         => 'ArrayRef',
+    required    => 1,
+    init_arg    => 'injectors',
+    default     => sub { [] },
+);
 
 has injectors => (
     is          => 'ro',
     isa         => 'Bolts::Injector::List',
-    required    => 1,
-    default     => sub { [] },
+    lazy_build  => 1,
     traits      => [ 'Array' ],
     handles     => {
         all_injectors => 'elements',
         add_injector  => 'push',
     },
+    init_arg    => undef,
 );
+
+sub _build_injectors {
+    my $self = shift;
+
+    my $i = 0;
+    my @injectors;
+    my $init_array = $self->injectors_initializer;
+    for my $init (@$init_array) {
+        if ($init->$_can('does') && $init->$_does('Bolts::Injector')) {
+            push @injectors, $init;
+        }
+        elsif (reftype $init eq 'ARRAY') {
+            return $self->meta_locator->acquire(@$init);
+        }
+        else {
+            Carp::croak("unknown injector initializer type at index $i");
+        }
+
+        $i++;
+    }
+
+    return \@injectors;
+}
 
 =head2 does
 

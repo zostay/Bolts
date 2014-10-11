@@ -4,11 +4,21 @@ package Bolts::Role::SelfLocator;
 
 use Moose::Role;
 
-with 'Bolts::Role::Locator';
+with 'Bolts::Role::RootLocator';
 
 =head1 DESCRIPTION
 
 Any Moose object can turned into a L<Bolts::Role::Locator> easily just by implementing this role.
+
+=head1 ROLES
+
+=over
+
+=item *
+
+L<Bolts::Role::Locator>
+
+=back
 
 =head1 METHODS
 

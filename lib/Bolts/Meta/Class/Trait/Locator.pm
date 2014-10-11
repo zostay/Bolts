@@ -10,6 +10,16 @@ use Bolts::Meta::Locator;
 
 This is another handy feature for use when constructing and managing a bag of artifacts. It provides a meta locator to the class for looking up standard Bolts objects like blueprints, scopes, injectors, inferrers, etc.
 
+=head1 ROLES
+
+=over
+
+=item *
+
+L<Bolts::Role::Locator>
+
+=back
+
 =head1 ATTRIBUTES
 
 =head2 locator
@@ -24,11 +34,17 @@ has locator => (
     is          => 'rw',
     does        => 'Bolts::Role::Locator',
     lazy_build  => 1,
-    handles     => 'Bolts::Role::Locator',
 );
 
 sub _build_locator {
     $Bolts::GLOBAL_FALLBACK_META_LOCATOR->new;
 }
+
+sub acquire     { shift->locator->acquire(@_) }
+sub acquire_all { shift->locator->acquire_all(@_) }
+sub resolve     { shift->locator->resolve(@_) }
+sub get         { shift->locator->get(@_) }
+
+with 'Bolts::Role::Locator';
 
 1;

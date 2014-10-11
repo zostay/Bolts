@@ -23,7 +23,7 @@ This can be used to wrap any object, array, or hash reference in a L<Bolts::Role
 
 =item *
 
-L<Bolts::Role::Locator>
+L<Bolts::Role::RootLocator>
 
 =back
 
@@ -41,7 +41,7 @@ has root => (
     required    => 1,
 );
 
-with 'Bolts::Role::Locator';
+with 'Bolts::Role::RootLocator';
 
 =head1 METHODS
 

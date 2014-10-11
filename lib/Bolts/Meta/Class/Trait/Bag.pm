@@ -1,6 +1,6 @@
 package Bolts::Meta::Class::Trait::Bag;
 
-# ABSTRACT: Metaclass role for bags built with Bolts::Bag
+# ABSTRACT: Metaclass role for Bolts-built bags
 
 use Moose::Role;
 

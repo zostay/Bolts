@@ -356,6 +356,7 @@ sub artifact {
     my $blueprint  = $meta->acquire('blueprint', $blueprint_name, \%params);
 
     my $artifact = Bolts::Artifact->new(
+        meta_locator => $meta,
         name         => $name,
         blueprint    => $blueprint,
         scope        => $scope,
