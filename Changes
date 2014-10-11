@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+    * Modify locator_for() and meta_locator_for() in Bolts::Util to return
+      the same locator object for each invocation after the first for a given
+      object reference.
+
 0.142650  2014-09-22 00:33:43CDT-0500 America/Chicago
 
     * Initial release.
