@@ -59,6 +59,20 @@ injected.
 
 =head1 ATTRIBUTES
 
+=head2 init_locator
+
+If provided with a reference to the meta-locator for the bag to which the injector is going to be attached, the L<blueprint> may be given as initializers.
+
+=cut
+
+has init_locator => (
+    is          => 'ro',
+    isa         => 'Bolts::Role::Locator',
+    weak_ref    => 1,
+);
+
+#with 'Bolts::Role::Initializer';
+
 =head2 key
 
 This is the key used to desribe what the injector is injecting. This might be a parameter name, an array index, or method name (or any other descriptive string).
@@ -77,12 +91,21 @@ This is the blueprint that defines how the value being injected will be construc
 
 All the injector needs to worry about is the L</get> method, which handles the process of getting and validating the value for you.
 
+Instead of passing the blueprint object in directly, you can provide an initializer in an array reference, similar to what you would pass to C<acquire> to get the blueprint from the meta-locator, e.g.:
+
+    blueprint => bolts_init('blueprint', 'acquire', {
+        path => [ 'foo' ],
+    }),
+
+If so, you must provide an L</init_locator>.
+
 =cut
 
 has blueprint => (
     is          => 'ro',
     does        => 'Bolts::Blueprint::Role::Injector',
     required    => 1,
+    traits      => [ 'Bolts::Initializer' ],
 );
 
 =head2 does

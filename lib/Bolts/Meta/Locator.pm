@@ -87,7 +87,6 @@ sub _build_blueprint {
 
     my $bp = Bolts::Bag->start_bag(
         package      => 'Bolts::Meta::Locator::Blueprint',
-        meta_locator => $self,
         such_that_each => {
             does => 'Bolts::Blueprint',
         },
@@ -183,7 +182,6 @@ sub _build_inference {
 
     return [
         Bolts::Artifact->new(
-            meta_locator => $self,
             name         => 'moose',
             blueprint    => Bolts::Blueprint::Factory->new(
                 class    => 'Bolts::Inference::Moose',
@@ -231,7 +229,6 @@ sub _build_injector {
     my $prototype = $self->scope->prototype->get($self->scope);
 
     my $parameter_name = Bolts::Artifact->new(
-        meta_locator => $self,
         name         => 'parameter_name',
         blueprint    => Bolts::Blueprint::Factory->new(
             class    => 'Bolts::Injector::Parameter::ByName',
@@ -273,7 +270,6 @@ sub _build_injector {
 
     my $bag = Bolts::Bag->start_bag(
         package        => 'Bolts::Meta::Locator::Injector',
-        meta_locator   => $self,
         such_that_each => {
             does => 'Bolts::Injector',
         },
@@ -285,7 +281,6 @@ sub _build_injector {
     
     $bag->add_artifact(
         parameter_position => Bolts::Artifact->new(
-            meta_locator => $self,
             name         => 'parameter_position',
             blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Parameter::ByPosition',
@@ -297,7 +292,6 @@ sub _build_injector {
 
     $bag->add_artifact(
         setter => Bolts::Artifact->new(
-            meta_locator => $self,
             name         => 'setter',
             blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Setter',
@@ -309,7 +303,6 @@ sub _build_injector {
 
     $bag->add_artifact(
         store_array => Bolts::Artifact->new(
-            meta_locator => $self,
             name         => 'store_array',
             blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Store::Array',
@@ -321,7 +314,6 @@ sub _build_injector {
 
     $bag->add_artifact(
         store_hash => Bolts::Artifact->new(
-            meta_locator => $self,
             name         => 'store_hash',
             blueprint    => Bolts::Blueprint::Factory->new(
                 class => 'Bolts::Injector::Store::Hash',
@@ -367,7 +359,6 @@ sub _build_scope {
     my $prototype = Bolts::Scope::Prototype->new;
 
     my $prototype_artifact = Bolts::Artifact->new(
-        meta_locator => $self,
         name         => 'prototype',
         blueprint    => Bolts::Blueprint::Literal->new(
             value => $prototype,
@@ -377,7 +368,6 @@ sub _build_scope {
 
     my $bag = Bolts::Bag->start_bag(
         package        => 'Bolts::Meta::Locator::Scope',
-        meta_locator   => $self,
         such_that_each => {
             does => 'Bolts::Scope',
         },
@@ -390,7 +380,6 @@ sub _build_scope {
 
     $bag->add_artifact(
         singleton => Bolts::Artifact->new(
-            meta_locator => $self,
             name         => 'singleton',
             blueprint    => Bolts::Blueprint::Literal->new(
                 value => $singleton,

@@ -50,6 +50,8 @@ When complete, the complete, resolved artifact found is returned.
 
 sub acquire {
     my ($self, @path) = @_;
+    # use Data::Dumper;
+    # Carp::cluck(Dumper(\@path));
 
     my $parameters = {};
     if (@path > 1 and ref $path[-1]) {

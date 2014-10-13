@@ -86,11 +86,11 @@ B<Required.> This sets the L<Bolts::Blueprint> used to construct the artifact.
 
 Instead of passing the blueprint object in directly, you can provide an initializer in an array reference, similar to what you would pass to C<acquire> to get the blueprint from the meta-locator, e.g.:
 
-  blueprint => [ 'blueprint', 'acquire', {
+  blueprint => bolts_init('blueprint', 'acquire', {
       path => [ 'foo' ],
-  } ],
+  }),
 
-If so, you must provide a L</init_locator>.
+If so, you must provide an L</init_locator>.
 
 =cut
 
@@ -107,7 +107,7 @@ B<Required.> This sets the L<Bolts::Scope> used to manage the object's lifecycle
 
 Instead of passing the scope object in directly, you can provide an initializer in an array reference, similar to what you would pass to C<acquire> to get the scope from the meta-locator, e.g.:
 
-  scope => [ 'scope', 'singleton' ]
+  scope => bolts_init('scope', 'singleton'),
 
 If so, you must provide a L</init_locator>.
 
@@ -175,12 +175,12 @@ This is an array of L<Bolts::Injector>s, which are used to inject values into or
 Instead of passing the array of injector objects in directly, you can provide an array of initializers, each as an array reference, similar to what you would pass to C<acquire> for each to get each injector from the meta-locator, e.g.:
 
   injector => [
-      [ 'injector', 'parameter_name', {
+      bolts_init('injector', 'parameter_name', {
           key       => 'foo',
-          blueprint => $meta_locator->acquire('blueprint', 'literal', {
+          blueprint => bolts_init('blueprint', 'literal', {
               value => 42,
           }),
-      } ],
+      }),
   ]
 
 If so, you must provide a L</init_locator>.
@@ -242,11 +242,11 @@ sub infer_injectors {
     # warn Dumper($self);
     # $self->inference_is_done(1);
 
-    my $loc      = locator_for($bag);
-    my $meta_loc = meta_locator_for($bag);
-
     # Use inferences to collect the list of injectors
     if ($self->infer ne 'none') {
+        my $loc      = locator_for($bag);
+        my $meta_loc = meta_locator_for($bag);
+
         my $inference_type = $self->infer;
 
         my $inferences = $meta_loc->acquire_all('inference');

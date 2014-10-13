@@ -95,10 +95,11 @@ sub infer {
             next ATTR;
         }
 
+        my $isa = $attr->type_constraint;
         push @parameters, {
             key        => $key,
             inject_via => [ 'injector', $preferred_injector ],
-            isa        => $attr->type_constraint,
+            (defined $isa ? (isa => $isa) : ()),
             required   => $attr->is_required,
         };
     }
