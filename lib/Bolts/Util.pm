@@ -10,8 +10,10 @@ use Moose::Util;
 use Safe::Isa;
 use Hash::Util::FieldHash 'fieldhash';
 
+use Bolts::Meta::Initializer;
+
 Moose::Exporter->setup_import_methods(
-    as_is => [ qw( locator_for meta_locator_for ) ],
+    as_is => [ qw( bolts_init locator_for meta_locator_for ) ],
 );
 
 fieldhash my %locator;
@@ -19,7 +21,7 @@ fieldhash my %meta_locator;
 
 =head1 SYNOPSIS
 
-    use Bolts::Util qw( locator_for meta_locator_for );
+    use Bolts::Util qw( bolts_init locator_for meta_locator_for );
 
     my $loc   = locator_for($bag);
     my $thing = $loc->acquire('path', 'to', 'thing');
@@ -29,6 +31,11 @@ fieldhash my %meta_locator;
         class  => 'MyApp::Thing',
         method => 'fetch',
     });
+
+    # See Bolts::Role::Initializer for a better synopsis
+    my $obj = MyApp::Thing->new(
+        foo => bolts_init('path', 'to', 'foo'),
+    );
 
 =head1 DESCRIPTION
 
@@ -83,5 +90,19 @@ sub meta_locator_for {
 
     return $meta_locator{ $bag } = $Bolts::GLOBAL_FALLBACK_META_LOCATOR->new;
 }
+
+=head2 bolts_init
+
+    my $init = bolts_init(@path, \%params);
+
+This is shorthand for:
+
+    my $init = Bolts::Meta::Initializer->new(@path, \%params);
+
+This returns an initializer object that may be used with L<Bolts::Role::Initializer> to automatically initialize attributes from a built-in locator.
+
+=cut
+
+sub bolts_init { Bolts::Meta::Initializer->new(@_) }
 
 1;
