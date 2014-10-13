@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.142860  2014-10-13 10:20:59CDT-0500 America/Chicago
+
     * Bugfix: The push key to Bolts::artifact() was incorrectly using a 1-based
       index for injector keys rather than a 0-based index.
     * Replaced Bolts::Role::Locator with a version that only declares the
