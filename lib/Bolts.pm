@@ -328,13 +328,14 @@ sub artifact {
 
         my $i = 0;
         for my $def (@$push) {
-            $i++;
             my $key = $def->{key} // $i;
 
             push @injectors, _injector(
                 $meta, 'push', 'store_array',
                 $key, $def,
             );
+
+            $i++;
         }
     }
 

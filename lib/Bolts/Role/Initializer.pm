@@ -80,7 +80,7 @@ This is used to perform acquisition with the initializer object. This is just de
 
 sub initialize_value {
     my $self = shift;
-    return $self->locator->acquire(@_);
+    return $self->init_locator->acquire(@_);
 }
 
 1;
