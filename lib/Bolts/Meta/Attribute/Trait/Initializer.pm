@@ -7,6 +7,32 @@ use Safe::Isa;
 
 Moose::Util::meta_attribute_alias('Bolts::Initializer');
 
+=head1 DESCRIPTION
+
+Sometimes it can be handy to partially break inversion of control to allow an object some control over it's own destiny. This attribute, given the short alias L<Bolts::Initializer>, can help you do that.
+
+See L<Bolts::Role::Initializer> for details and a synopsis.
+
+=head1 ATTRIBUTES
+
+=head2 init_type
+
+This is the type of initialization to perform on the intializer. It may be set to either "Array" or "Scalar" and defaults to "Scalar".
+
+=over
+
+=item Scalar
+
+The initializer is given as a single value. Either the actual value to be passed through or a L<Bolts::Meta::Initializer> object.
+
+=item Array
+
+The initializer is given as an array reference of values. Each element of the array may be a L<Bolts::Meta::Initializer> object or a real object to place in the array as is.
+
+=back
+
+=cut
+
 # TODO Make this into a helper class so that other kinds of init can be added
 # and customized later.
 use Moose::Util::TypeConstraints;
@@ -17,6 +43,12 @@ has init_type => (
     default     => 'Scalar',
 );
 no Moose::Util::TypeConstraints;
+
+=head2 special_initializer
+
+This is the name of the secondary attribute to use as the hidden initializer attribute. It defaults to C<<"_${name}_initializer">>, where C<<${name}>> is the name of this attribute.
+
+=cut
 
 has special_initializer => (
     is          => 'ro',
