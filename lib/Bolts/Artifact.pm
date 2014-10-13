@@ -46,22 +46,27 @@ This is the primary implementation of L<Bolts::Role::Artifact> with all the feat
 
 L<Bolts::Role::Artifact>
 
+=item *
+
+L<Bolts::Role::Initializer>
+
 =back
 
 =head1 ATTRIBUTES
 
-=head2 meta_locator
+=head2 init_locator
 
-B<Required.> This sets the meta locator object for the bag. The best way to provide this is to use the L<Bolts::Util/meta_locator_for> function to locate the meta locator for an object. The object must be an instance of L<Bolts::Role::Locator> and should be associated with the bag the artifact will be placed within.
+If provided with a references to the meta-locator for the bag to which the artifact is going to be attached, the L</blueprint>, L</scope>, and L</injectors> attributes may be given as initializers rather than as objects.
 
 =cut
 
-has meta_locator => (
+has init_locator => (
     is          => 'ro',
     does        => 'Bolts::Role::Locator',
-    required    => 1,
     weak_ref    => 1,
 );
+
+with 'Bolts::Role::Initializer';
 
 =head2 name
 
@@ -85,35 +90,16 @@ Instead of passing the blueprint object in directly, you can provide an initiali
       path => [ 'foo' ],
   } ],
 
-=cut
+If so, you must provide a L</init_locator>.
 
-has blueprint_initializer => (
-    is          => 'ro',
-    required    => 1,
-    init_arg    => 'blueprint',
-);
+=cut
 
 has blueprint => (
     is          => 'ro',
     does        => 'Bolts::Blueprint',
-    lazy_build  => 1,
-    init_arg    => undef,
+    required    => 1,
+    traits      => [ 'Bolts::Initializer' ],
 );
-
-sub _build_blueprint {
-    my $self = shift;
-
-    my $init = $self->blueprint_initializer;
-    if ($init->$_can('does') && $init->$_does('Bolts::Blueprint')) {
-        return $init;
-    }
-    elsif (reftype $init eq 'ARRAY') {
-        return $self->meta_locator->acquire(@$init);
-    }
-    else {
-        Carp::croak("unknown blueprint initializer type");
-    }
-}
 
 =head2 scope
 
@@ -123,35 +109,16 @@ Instead of passing the scope object in directly, you can provide an initializer 
 
   scope => [ 'scope', 'singleton' ]
 
-=cut
+If so, you must provide a L</init_locator>.
 
-has scope_initializer => (
-    is          => 'ro',
-    required    => 1,
-    init_arg    => 'scope',
-);
+=cut
 
 has scope => (
     is          => 'ro',
     does        => 'Bolts::Scope',
-    lazy_build  => 1,
-    init_arg    => undef,
+    required    => 1,
+    traits      => [ 'Bolts::Initializer' ],
 );
-
-sub _build_scope {
-    my $self = shift;
-
-    my $init = $self->scope_initializer;
-    if ($init->$_can('does') && $init->$_does('Bolts::Scope')) {
-        return $init;
-    }
-    elsif (reftype $init eq 'ARRAY') {
-        return $self->meta_locator->acquire(@$init);
-    }
-    else {
-        Carp::croak("unknown scope initializer type");
-    }
-}
 
 =head2 infer
 
@@ -216,54 +183,25 @@ Instead of passing the array of injector objects in directly, you can provide an
       } ],
   ]
 
+If so, you must provide a L</init_locator>.
+
 =cut
 
 subtype 'Bolts::Injector::List',
      as 'ArrayRef',
   where { all { $_->$_does('Bolts::Injector') } @$_ };
 
-has injectors_initializer => (
-    is          => 'ro',
-    isa         => 'ArrayRef',
-    required    => 1,
-    init_arg    => 'injectors',
-    default     => sub { [] },
-);
-
 has injectors => (
     is          => 'ro',
     isa         => 'Bolts::Injector::List',
-    lazy_build  => 1,
-    traits      => [ 'Array' ],
+    required    => 1,
+    traits      => [ 'Array', 'Bolts::Initializer' ],
     handles     => {
         all_injectors => 'elements',
         add_injector  => 'push',
     },
-    init_arg    => undef,
+    default     => sub { [] },
 );
-
-sub _build_injectors {
-    my $self = shift;
-
-    my $i = 0;
-    my @injectors;
-    my $init_array = $self->injectors_initializer;
-    for my $init (@$init_array) {
-        if ($init->$_can('does') && $init->$_does('Bolts::Injector')) {
-            push @injectors, $init;
-        }
-        elsif (reftype $init eq 'ARRAY') {
-            return $self->meta_locator->acquire(@$init);
-        }
-        else {
-            Carp::croak("unknown injector initializer type at index $i");
-        }
-
-        $i++;
-    }
-
-    return \@injectors;
-}
 
 =head2 does
 

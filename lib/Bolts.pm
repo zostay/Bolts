@@ -5,6 +5,9 @@ package Bolts;
 use Moose ();
 use Moose::Exporter;
 
+# Register attribute traits
+use Bolts::Meta::Attribute::Trait::Initializer;
+
 use Class::Load ();
 use Moose::Util::MetaRole ();
 use Moose::Util::TypeConstraints ();
