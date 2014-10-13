@@ -24,9 +24,9 @@ has special_initializer => (
     required    => 1,
 );
 
-has original_default => (
+has _original_default => (
     is          => 'rw',
-    predicate   => 'has_original_default',
+    predicate   => '_has_original_default',
 );
 
 before install_accessors => sub {
@@ -37,8 +37,8 @@ before install_accessors => sub {
         is       => 'ro',
         required => $self->is_required,
         init_arg => $self->name,
-        ($self->has_original_default ? (
-            default  => $self->original_default
+        ($self->_has_original_default ? (
+            default  => $self->_original_default
         ) : ()),
     ));
 };
@@ -54,7 +54,7 @@ before _process_options => sub {
 
     my $_initializer = $options->{special_initializer};
 
-    $options->{original_default} = delete $options->{default}
+    $options->{_original_default} = delete $options->{default}
         if exists $options->{default};
 
     $options->{init_arg}  = undef;
