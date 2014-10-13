@@ -70,7 +70,7 @@ requires 'init_locator';
 
 =head1 METHODS
 
-=head2 initializer_value
+=head2 initialize_value
 
     my $value = $self->initialize_value(@path, \%params);
 

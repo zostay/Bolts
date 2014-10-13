@@ -40,6 +40,24 @@ sub _build_locator {
     $Bolts::GLOBAL_FALLBACK_META_LOCATOR->new;
 }
 
+=head2 acquire
+
+Delegated to the C<acquire> method of L</locator>.
+
+=head2 acquire_all
+
+Delegated to the C<acquire_all> method of L</locator>.
+
+=head2 resolve
+
+Delegated to the C<resolve> method of L</locator>.
+
+=head2 get
+
+Delegated to the C<get> method of L</locator>.
+
+=cut
+
 sub acquire     { shift->locator->acquire(@_) }
 sub acquire_all { shift->locator->acquire_all(@_) }
 sub resolve     { shift->locator->resolve(@_) }
