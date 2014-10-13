@@ -8,12 +8,16 @@
       Bolts::Meta::Locator to use Bolts::Role::RootLocator.
     * Made Bolts::Meta::Class::Trait::Locator into an implementation of
       Bolts::Role::Locator.
-    * Added a new required meta_locator attribute to Bolts::Artifact
+    * Added a new init_locator attribute to Bolts::Artifact
     * Changed blueprint, scope, and injectors so that they can take a special
-      initializer argument during construction that takes the form of an array
-      reference that can be used to acquire the blueprint, scope, and injectors
-      (respectively) rather than require they be delivered directly by the
-      caller. This is much nicer to use directly now.
+      initializer argument during construction that takes the form of a
+      Bolts::Meta::Initializer reference that can be used to acquire the
+      blueprint, scope, and injectors (respectively) rather than require they be
+      delivered directly by the caller. This is much nicer to use directly now.
+    * Added Bolts::Role::Initializer and the Bolts::Intializer attribute trait
+      to make objects that can be initialized through the use of their own
+      personal locator convenient. This is a slight deviation from pure IOC, but
+      very convenient in some cases.
     * Modify locator_for() and meta_locator_for() in Bolts::Util to return
       the same locator object for each invocation after the first for a given
       object reference.
