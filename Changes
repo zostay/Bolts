@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+    * Interface Change: The dep() sugar method in Bolts now uses paths that are
+      based on the top-level bag and not the local bag/contains definition.
     * Add a new blueprint, parent_bag, defined in Bolts::Blueprint::ParentBag,
       which just retrieves the bag of the parent during artifact resolution.
     * Add a sugar method to Bolts named self(), which provides a quick way of

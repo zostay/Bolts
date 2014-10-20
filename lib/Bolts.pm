@@ -43,6 +43,21 @@ Moose::Exporter->setup_import_methods(
     also => 'Moose',
 );
 
+sub init_meta {
+    my $class = shift;
+    my $meta = Moose->init_meta(@_);
+
+    $meta->add_attribute(__top => (
+        reader   => '__top',
+        required => 1,
+        default  => sub { shift },
+        lazy     => 1,
+        weak_ref => 1,
+    ));
+
+    return $meta;
+}
+
 sub _bag_meta {
     my ($meta) = @_;
 
@@ -243,6 +258,12 @@ sub artifact {
         # Is it an acquired?
         elsif (defined $params{path} && $params{path}) {
             $blueprint_name = 'acquired';
+
+            $params{path} = [ $params{path} ] unless ref $params{path} eq 'ARRAY';
+
+            my @path = ('__top', @{ $params{path} });
+
+            $params{path} = \@path;
         }
 
         # Is it a literal?
@@ -389,7 +410,17 @@ sub bag {
     $meta = _bag_meta($meta);
 
     my $def = $partial_def->($name);
-    $meta->add_artifact($name, sub { $def });
+    $meta->add_artifact(
+        $name => Bolts::Artifact::Thunk->new(
+           thunk =>  sub { 
+                my ($self, $bag, $name, %params) = @_;
+                return $def->name->new( 
+                    __parent => $bag,
+                    %params,
+                );
+            },
+        )
+    );
 }
 
 sub contains(&;$) {
@@ -408,12 +439,31 @@ sub contains(&;$) {
         );
         push @BAG_META, $bag_meta;
 
+        $bag_meta->add_attribute(__parent => (
+            reader   => '__parent',
+            required => 1,
+            default  => sub { Carp::confess('why are we here?') },
+            weak_ref => 1,
+        ));
+
+        $bag_meta->add_artifact(
+            __top => Bolts::Artifact->new(
+                meta_locator => $bag_meta,
+                name         => '__top',
+                blueprint    => $bag_meta->acquire('blueprint', 'acquired', {
+                    path => [ '__parent', '__top' ],
+                }),
+                scope        => $bag_meta->acquire('scope', 'prototype'),
+            )
+        );
+
         $code->($bag_meta);
 
         pop @BAG_META;
 
         $bag_meta->finish_bag;
-        return $bag_meta->name->new;
+
+        return $bag_meta;
     };
 }
 
@@ -482,9 +532,11 @@ sub dep($) {
 
     $path = [ $path ] unless ref $path eq 'ARRAY';
 
+    my @path = ('__top', @$path);
+
     return {
         blueprint => $meta->acquire('blueprint', 'acquired', {
-            path => [ @$path ],
+            path => \@path,
         }),
     };
 }
