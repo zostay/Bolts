@@ -632,6 +632,7 @@ This is variable likely to change or disappear in the future.
 =begin Pod::Coverage
 
     contains
+    init_meta
 
 =end Pod::Coverage
 
