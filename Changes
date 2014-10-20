@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.142930  2014-10-20 11:17:32CDT-0500 America/Chicago
+
     * Interface Change: The dep() sugar method in Bolts now uses paths that are
       based on the top-level bag and not the local bag/contains definition.
     * Add a new blueprint, parent_bag, defined in Bolts::Blueprint::ParentBag,
