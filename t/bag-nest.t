@@ -42,7 +42,7 @@ use Test::More tests => 6;
     artifact down => (
         class => 'Test::Bag::down',
         parameters => {
-            top => builder { $_[1] },
+            top => self,
         },
     );
 

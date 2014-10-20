@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+    * Add a new blueprint, parent_bag, defined in Bolts::Blueprint::ParentBag,
+      which just retrieves the bag of the parent during artifact resolution.
+    * Add a sugar method to Bolts named self(), which provides a quick way of
+      creating a parent_bag dependency.
+
 0.142860  2014-10-13 10:20:59CDT-0500 America/Chicago
 
     * Bugfix: The push key to Bolts::artifact() was incorrectly using a 1-based

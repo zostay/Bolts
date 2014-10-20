@@ -154,6 +154,16 @@ sub _build_blueprint {
         ),
     );
 
+    $bp->add_artifact(
+        parent_bag => Bolts::Artifact::Thunk->new(
+            thunk => sub {
+                my ($self, $bag, %o) = @_;
+                Class::Load::load_class('Bolts::Blueprint::ParentBag');
+                Bolts::Blueprint::ParentBag->new(%o);
+            },
+        ),
+    );
+
     $bp->finish_bag;
 
     return $bp->name->new;

@@ -13,6 +13,19 @@ While a bag may be any kind of object, this metaclass role on a bag provides som
 
 =head1 ATTRIBUTES
 
+=head2 artifacts
+
+These are the artifacts that have been added to this bag.
+
+=cut
+
+has artifacts => (
+    is          => 'ro',
+    isa         => 'ArrayRef',
+    required    => 1,
+    default     => sub { [] },
+);
+
 =head2 such_that_isa
 
 This is a L<Moose::Meta::TypeConstraint> to apply to the L<Bolts::Artifact/isa_type> of all contained artifacts.

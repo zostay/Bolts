@@ -38,7 +38,7 @@ Moose::Exporter->setup_import_methods(
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
     with_meta => [ qw(
-        artifact bag builder contains dep option such_that_each value
+        artifact bag builder contains dep option self such_that_each value
     ) ],
     also => 'Moose',
 );
@@ -527,7 +527,7 @@ sub option($) {
 
     artifact name => (
         ...
-        depedencies => {
+        parameters => {
             thing => value 42,
         },
     );
@@ -544,6 +544,28 @@ sub value($) {
         blueprint => $meta->acquire('blueprint', 'literal', {
             value => $value,
         }),
+    };
+}
+
+=head2 self
+
+    artifact thing => (
+        ...
+        parameters => {
+            parent => self, 
+        },
+    );
+
+Sets up a blueprint to return the artifact's parent.    
+
+=cut
+
+sub self() {
+    my ($meta) = @_;
+    $meta = _bag_meta($meta);
+
+    return {
+        blueprint => $meta->acquire('blueprint', 'parent_bag'),
     };
 }
 
