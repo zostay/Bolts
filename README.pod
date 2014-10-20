@@ -1,6 +1,14 @@
+=pod
+
+=encoding UTF-8
+
 =head1 NAME
 
 Bolts - An Inversion of Control framework for Perl
+
+=head1 VERSION
+
+version 0.142930
 
 =head1 SYNOPSIS
 
@@ -195,13 +203,24 @@ Helper to allow a dependency to be passed as a given option to the call to L<Bol
 
     artifact name => (
         ...
-        depedencies => {
+        parameters => {
             thing => value 42,
         },
     );
 
 Helper that passes a literal value through as a dependency to the artifact
 during injection.
+
+=head2 self
+
+    artifact thing => (
+        ...
+        parameters => {
+            parent => self, 
+        },
+    );
+
+Sets up a blueprint to return the artifact's parent.    
 
 =head1 GLOBALS
 
@@ -211,11 +230,17 @@ B<Subject to Change:> This is the name of the locator to use for locating the me
 
 This is variable likely to change or disappear in the future.
 
-=head1 COPYRIGHT & LICENSE
+=for Pod::Coverage     contains
 
-Copyright 2014 Qubling Software, LLC.
+=head1 AUTHOR
 
-This software may be distributed and modified under the same terms as Perl itself.
+Andrew Sterling Hanenkamp <hanenkamp@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2014 by Qubling Software LLC.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
-
