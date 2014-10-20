@@ -477,12 +477,14 @@ This is a helper for laoding dependencies from a path in the current bag (or a b
 =cut
 
 sub dep($) {
-    my ($meta, @path) = @_;
+    my ($meta, $path) = @_;
     $meta = _bag_meta($meta);
+
+    $path = [ $path ] unless ref $path eq 'ARRAY';
 
     return {
         blueprint => $meta->acquire('blueprint', 'acquired', {
-            path => \@path,
+            path => [ @$path ],
         }),
     };
 }
