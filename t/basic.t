@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 18;
 
 use Bolts::Util qw( locator_for );
 
@@ -62,6 +62,15 @@ use Bolts::Util qw( locator_for );
 my $locator = Artifacts->new( acquired => 'something' );;
 #diag explain $locator;
 ok($locator);
+
+ok($locator->meta);
+
+my %artifacts = $locator->meta->list_artifacts;
+ok(scalar keys %artifacts, 5);
+isa_ok($artifacts{$_}, 'Bolts::Artifact') for qw(
+    acquired literal class singleton_class
+);
+isa_ok($artifacts{bag}, 'Bolts::Artifact::Thunk');
 
 # Via the acquire method
 is($locator->acquire('acquired'), 'something');

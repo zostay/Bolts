@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+    * Fleshing out the artifacts accessor of Bolts::Meta::Class::Trait::Bag,
+      which had been mentioned in the documentation previously, but had not yet
+      been implemented.
+
 0.142930  2014-10-20 11:17:32CDT-0500 America/Chicago
 
     * Interface Change: The dep() sugar method in Bolts now uses paths that are

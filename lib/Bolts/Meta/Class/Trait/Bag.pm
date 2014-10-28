@@ -15,15 +15,19 @@ While a bag may be any kind of object, this metaclass role on a bag provides som
 
 =head2 artifacts
 
-These are the artifacts that have been added to this bag.
+These are the artifacts that have been added to this bag. It is saved as a hash. You can get the hash of artifacts as a list using C<list_artifacts>. You add artifacts to this list using L</add_artifact>.
 
 =cut
 
 has artifacts => (
     is          => 'ro',
-    isa         => 'ArrayRef',
     required    => 1,
-    default     => sub { [] },
+    default     => sub { +{} },
+    traits      => [ 'Hash' ],
+    handles     => {
+        '_add_artifact'  => 'set',
+        'list_artifacts' => 'elements',
+    },
 );
 
 =head2 such_that_isa
@@ -79,7 +83,7 @@ The C<isa> and C<does> will be applied to the artifact as appropriate.
 =cut
 
 sub add_artifact {
-    my ($meta, $method, $value, $such_that) = @_;
+    my ($meta, $name, $value, $such_that) = @_;
     
     if (!defined $such_that and ($meta->has_such_that_isa
                              or  $meta->has_such_that_does)) {
@@ -92,7 +96,8 @@ sub add_artifact {
 
     if ($value->$_does('Bolts::Role::Artifact')) {
         $value->such_that($such_that) if $such_that;
-        $meta->add_method($method => sub { $value });
+        $meta->_add_artifact($name => $value);
+        $meta->add_method($name => sub { $value });
     }
 
     elsif (defined reftype($value) and reftype($value) eq 'CODE') {
@@ -101,7 +106,8 @@ sub add_artifact {
             thunk => $value,
         );
 
-        $meta->add_method($method => sub { $thunk });
+        $meta->_add_artifact($name => $thunk);
+        $meta->add_method($name => sub { $thunk });
     }
 
     else {
@@ -113,7 +119,8 @@ sub add_artifact {
             thunk => sub { $value },
         );
 
-        $meta->add_method($method => sub { $thunk });
+        $meta->_add_artifact($name => $thunk);
+        $meta->add_method($name => sub { $thunk });
     }
 
 }
