@@ -43,6 +43,214 @@ This provides some helpful utility methods for use with Bolts.
 
 =head1 EXPORTED FUNCTIONS
 
+=head2 artifact
+
+    my $artifact = artifact($bag, $name, %definition);
+
+    # For example:
+    my $artifact = artifact($bag, thing => ( class => 'MyApp::Thing' ) );
+
+This contains the internal implementation for building L<Bolt::Artifact> objects used by the sugar methods in L<Bolts> and L<Bolts::Role>. See the documentation L<Bolts/artifact|there> for more details on how to call it.
+
+The C<$bag> must be the metaclass or reference to which the artifact is being attached. The C<$name> is the name to give the artifact and teh C<%definition> is the remaineder of the definition.
+
+=cut
+
+sub _injector {
+    my ($meta, $where, $type, $key, $params) = @_;
+
+    my %params;
+
+    if ($params->$_can('does') and $params->$_does('Bolts::Blueprint')) {
+        %params = { blueprint => $params };
+    }
+    else {
+        %params = %$params;
+    }
+
+    Carp::croak("invalid blueprint in $where $key")
+        unless $params{blueprint}->$_can('does')
+           and $params{blueprint}->$_does('Bolts::Blueprint::Role::Injector');
+
+    $params{isa}  = Moose::Util::TypeConstraints::find_or_create_isa_type_constraint($params{isa})
+        if defined $params{isa};
+    $params{does} = Moose::Util::TypeConstraints::find_or_create_does_type_constraint($params{does})
+        if defined $params{does};
+
+    $params{key} = $key;
+
+    return $meta->acquire('injector', $type, \%params);
+}
+
+# TODO This sugar requires special knowledge of the built-in blueprint
+# types. It would be slick if this was not required. On the other hand, that
+# sounds like very deep magic and that might just be taking the magic too far.
+sub artifact {
+    my $meta = shift;
+    my $name = shift;
+
+    # No arguments means it's acquired with given parameters
+    my $blueprint_name;
+    my %params;
+    if (@_ == 0) {
+        $blueprint_name = 'acquired';
+        $params{path}   = [ "__auto_$name" ];
+        $meta->add_attribute("__auto_$name" =>
+            is       => 'ro',
+            init_arg => $name,
+        );
+    }
+
+    # One argument means it's a literal
+    elsif (@_ == 1) {
+        $blueprint_name = 'literal';
+        $params{value} = $_[0];
+    }
+
+    # Otherwise, we gotta figure out what it is...
+    else {
+        %params = @_;
+
+        # Is the service class named?
+        if (defined $params{blueprint}) {
+            $blueprint_name = delete $params{blueprint};
+        }
+
+        # Is it an acquired?
+        elsif (defined $params{path} && $params{path}) {
+            $blueprint_name = 'acquired';
+
+            $params{path} = [ $params{path} ] unless ref $params{path} eq 'ARRAY';
+
+            my @path = ('__top', @{ $params{path} });
+
+            $params{path} = \@path;
+        }
+
+        # Is it a literal?
+        elsif (exists $params{value}) {
+            $blueprint_name = 'literal';
+        }
+
+        # Is it a factory blueprint?
+        elsif (defined $params{class}) {
+            $blueprint_name = 'factory';
+        }
+
+        # Is it a builder blueprint?
+        elsif (defined $params{builder}) {
+            $blueprint_name = 'built';
+        }
+
+        else {
+            Carp::croak("unable to determine what kind of service $name is in ", $meta->name);
+        }
+    }
+
+    my @injectors;
+    if (defined $params{parameters}) {
+        my $parameters = delete $params{parameters};
+
+        if ($parameters->$_does('Bolts::Blueprint')) {
+            push @injectors, _injector(
+                $meta, 'parameters', 'parameter_position',
+                '0', { blueprint => $parameters },
+            );
+        }
+        elsif (ref $parameters eq 'HASH') {
+            for my $key (keys %$parameters) {
+                push @injectors, _injector(
+                    $meta, 'parameters', 'parameter_name', 
+                    $key, $parameters->{$key},
+                );
+            }
+        }
+        elsif (ref $parameters eq 'ARRAY') {
+            my $key = 0;
+            for my $params (@$parameters) {
+                push @injectors, _injector(
+                    $meta, 'parameters', 'parameter_position',
+                    $key++, $params,
+                );
+            }
+        }
+        else {
+            Carp::croak("parameters must be a blueprint, an array of blueprints, or a hash with blueprint values");
+        }
+    }
+
+    if (defined $params{setters}) {
+        my $setters = delete $params{setters};
+
+        for my $key (keys %$setters) {
+            push @injectors, _injector(
+                $meta, 'setters', 'setter',
+                $key, $setters->{$key},
+            );
+        }
+    }
+
+    if (defined $params{indexes}) {
+        my $indexes = delete $params{indexes};
+
+        while (my ($index, $def) = splice @$indexes, 0, 2) {
+            if (!Scalar::Util::blessed($def) && Scalar::Util::reftype($def) eq 'HASH') {
+                $def->{position} //= $index;
+            }
+
+            push @injectors, _injector(
+                $meta, 'indexes', 'store_array',
+                $index, $def,
+            );
+        }
+    }
+
+    if (defined $params{push}) {
+        my $push = delete $params{push};
+
+        my $i = 0;
+        for my $def (@$push) {
+            my $key = $def->{key} // $i;
+
+            push @injectors, _injector(
+                $meta, 'push', 'store_array',
+                $key, $def,
+            );
+
+            $i++;
+        }
+    }
+
+    if (defined $params{keys}) {
+        my $keys = delete $params{keys};
+
+        for my $key (keys %$keys) {
+            push @injectors, _injector(
+                $meta, 'keys', 'store_hash',
+                $key, $keys->{$key},
+            );
+        }
+    }
+
+    # TODO Remember the service for introspection
+
+    my $scope_name = delete $params{scope} // '_';
+    my $infer      = delete $params{infer} // 'none';
+
+    my $scope      = $meta->acquire('scope', $scope_name);
+
+    my $blueprint  = $meta->acquire('blueprint', $blueprint_name, \%params);
+
+    return Bolts::Artifact->new(
+        meta_locator => $meta,
+        name         => $name,
+        blueprint    => $blueprint,
+        scope        => $scope,
+        infer        => $infer,
+        injectors    => \@injectors,
+    );
+}
+
 =head2 locator_for
 
     my $loc = locator_for($bag);
