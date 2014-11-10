@@ -90,11 +90,11 @@ This is yet another Inversion of Control framework for Perl. This one is based u
 
 =head2 Inversion of Control
 
-For those who might now know what Inversion of Control (IOC) is, it is a design pattern aimed at helping you decouple your code, automate parts of the configuration assembly, and manage the life cycle of your objects.
+For those who might not know what Inversion of Control (IOC) is, it is a design pattern aimed at helping you decouple your code, automate parts of the configuration assembly, and manage the life cycle of your objects.
 
 By using an IOC framework, the objects in your program need to know less about the other objects in your application. Your objects can focus on knowing what it needs from other objects without knowing where to find objects that do that or how they are configured. 
 
-For example, early in a programs lifetime, the logger might be a local object that writes directly to a file. Later, it might be an object with the same interface, but it writes to syslog. Further on, it might be some sort of logging service that is accessed over the network through a stub provided by a service locator. If your program uses an IOC framework, the configuration files for your IOC will change to pass a different object to the application during each phase, but the program itself might not change at all.
+For example, early in a program's lifetime, the logger might be a local object that writes directly to a file. Later, it might be an object with the same interface, but it writes to syslog. Further on, it might be some sort of logging service that is accessed over the network through a stub provided by a service locator. If your program uses an IOC framework, the configuration files for your IOC will change to pass a different object to the application during each phase, but the program itself might not change at all.
 
 An IOC framework also helps you assemble complex configuration related to your application. It can join various configurations together in interesting and complex ways automatically.
 
@@ -114,7 +114,7 @@ Artifacts are grouped into bags. A B<bag> can be any object, hash reference, or 
 
 =head2 Locators
 
-A B<locator> is an object that finds things in a bag (these are things related to L<Bolts::Role::Locator>. The finding process is called, B<acquisition>. (If you are familiar with Harry Potter, this process is similar to Harry Potter using a wand to extract dittany from Hermione's handbag by saying "Accio Dittany.") After finding the object, the locator performs B<resolution>, which checks to see if returned artifact needs to be resolved further. (To continue the analogy, this is like unbottling the dittany and pouring it out, there may be another step before the artifact is completely ready for use.)
+A B<locator> is an object that finds things in a bag (these are things related to L<Bolts::Role::Locator>. The finding process is called, B<acquisition>. (If you are familiar with Harry Potter, this process is similar to Harry Potter using a wand to extract dittany from Hermione's handbag by saying "Accio Dittany.") After finding the object, the locator performs B<resolution>, which checks to see if the returned artifact needs to be resolved further. (To continue the analogy, this is like unbottling the dittany and pouring it out, there may be another step before the artifact is completely ready for use.)
 
 =head2 Blueprints
 
@@ -419,24 +419,13 @@ sub value($) {
 
 Sets up a blueprint to return the artifact's parent.    
 
-=cut
-
-sub self() {
-    my ($meta) = @_;
-    $meta = _bag_meta($meta);
-
-    return {
-        blueprint => $meta->acquire('blueprint', 'parent_bag'),
-    };
-}
-
 =head1 GLOBALS
 
 =head2 $Bolts::GLOBAL_FALLBACK_META_LOCATOR
 
 B<Subject to Change:> This is the name of the locator to use for locating the meta objects needed to configure within Bolts. The default is L<Bolts::Meta::Locator>, which defines the standard set of scopes, blueprints, etc.
 
-This is variable likely to change or disappear in the future.
+This variable likely to change or disappear in the future.
 
 =begin Pod::Coverage
 
