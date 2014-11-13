@@ -50,7 +50,7 @@ This provides some helpful utility methods for use with Bolts.
     # For example:
     my $artifact = artifact($bag, thing => ( class => 'MyApp::Thing' ) );
 
-This contains the internal implementation for building L<Bolt::Artifact> objects used by the sugar methods in L<Bolts> and L<Bolts::Role>. See the documentation L<Bolts/artifact|there> for more details on how to call it.
+This contains the internal implementation for building L<Bolt::Artifact> objects used by the sugar methods in L<Bolts> and L<Bolts::Role>. See the documentation L<there|Bolts/artifact> for more details on how to call it.
 
 The C<$bag> must be the metaclass or reference to which the artifact is being attached. The C<$name> is the name to give the artifact and teh C<%definition> is the remaineder of the definition.
 
