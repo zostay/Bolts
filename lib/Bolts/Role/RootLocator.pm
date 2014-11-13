@@ -151,11 +151,17 @@ sub _get_from {
     # A bag can be any blessed object...
     if (Scalar::Util::blessed($bag)) {
 
+        # If it is marked as an Opaque object, we can't locate within it
+        if ($bag->can('does') && $bag->does('Bolts::Role::Opaque')) {
+            Carp::croak(qq{may not examine "$component" at opaque path [$current_path]});
+        }
+
         # So long as it has that method
-        if ($bag->can($component)) {
+        elsif ($bag->can($component)) {
             return $bag->$component;
         }
         
+        # We don't know how to deal with it otherwise
         else {
             Carp::croak(qq{no artifact named "$component" at [$current_path]});
         }
