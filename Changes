@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.143170  2014-11-13 10:22:18-06:00 America/Chicago
+
     * Bugfix: The self() helper was missing from the Bolts package.
     * Adding Bolts:Util::artifact() as a generalized abstraction of the Bolts
       sugar (so it can be shared with Bolts::Role)
