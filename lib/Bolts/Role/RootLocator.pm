@@ -131,9 +131,7 @@ sub acquire {
 
     my @artifacts = @{ $loc->acquire_all(\@path) };
 
-This is similar to L<acquire>, but if the last bag is a reference to an array, then all the artifacts within that bag are acquired, resolved, and returned as a reference to an array.
-
-If the last item found at the path is not an array, it returns an empty list.
+This is similar to L<acquire>, but returns the value as a reference to an array of resolved artifacts.
 
 =cut
 
@@ -145,15 +143,21 @@ sub acquire_all {
         $options = pop @path;
     }
     
-    my $bag = $self->acquire(@path);
+    my $bag = $self->acquire(@path, $options);
     if (ref $bag eq 'ARRAY') {
         return [
             map { $self->resolve($bag, $_, $options) } @$bag
         ];
     }
 
+    elsif (ref $bag eq 'HASH') {
+        return [
+            map { $self->resolve($bag, $_, $options) } values %$bag
+        ];
+    }
+
     else {
-        return [];
+        return [ $bag ];
     }
 }
 

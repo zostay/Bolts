@@ -12,6 +12,8 @@ The reference implementation of this interface is found in L<Bolts::Role::RootLo
 
 =head1 REQUIRED METHODS
 
+Note that the behavior described here is considered the ideal and correct behavior. If it works within your application to fudge on this specifications a little bit, that's your choice, but the implementations provided by the Bolts library itself should adhere to these requirements perfectly.
+
 =head2 acquire
 
     my $artifact = $loc->acquire(@path, \%options);
@@ -30,11 +32,25 @@ requires 'acquire';
 
     my @artifacts = @{ $loc->acquire_all(@path, \%options) };
 
-This is similar to L<acquire>, but if the last bag is a reference to an array, then all the artifacts within that bag are acquired, resolved, and returned as a reference to an array.
+This is similar to L<acquire>, but performs an extra step, the behavior of which varies slightly depending on what artifact is resolved on the component of C<@path>:
+
+=over
+
+=item *
+
+If the last resolved artifact is a reference to an array, then all the artifacts within that bag are acquired, resolved, and returned as a reference to an array.
+
+=item *
+
+If the last resolved artifact is a reference to a hash, then all the values within are pulled, resolved, and returned as a reference to an array.
+
+=item *
+
+In any other case, the final resolved artifact is returned as a single item list.
+
+=back
 
 The final argument is optional. As with L</acquire>, it is must be a hash reference and is passed to each of the artifacts during their resolution.
-
-If the last item found at the path is not an array, it returns an empty list.
 
 =cut
 
