@@ -169,12 +169,22 @@ sub _get_from {
 
     # Or any unblessed hash
     elsif (ref $bag eq 'HASH') {
-        return $bag->{ $component };
+        if (exists $bag->{ $component }) {
+            return $bag->{ $component };
+        }
+        else {
+            Carp::croak(qq{no artifact keyed "$component" at [$current_path]});
+        }
     }
 
     # Or any unblessed array
     elsif (ref $bag eq 'ARRAY') {
-        return $bag->[ $component ];
+        if ($component =~ /^\d+$/ && @{ $bag } > $component) {
+            return $bag->[ $component ];
+        }
+        else {
+            Carp::croak(qq{no artifact indexed "$component" at [$current_path]});
+        }
     }
 
     # But nothing else...

@@ -8,6 +8,7 @@
       been implemented.
     * Add Bolts::Role::Opaque to hide the internals of an artifact from locators
       during aquisition.
+    * Better checking on keys and indexes when locating within an array or hash.
 
 0.142930  2014-10-20 11:17:32CDT-0500 America/Chicago
 
