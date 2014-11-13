@@ -4,6 +4,8 @@
       { $name => $artifact } rather than just $artifact.
     * It is now possible to pass an artifact object (i.e., an object
       implementing Bolts::Role::Artifact) as the definition of an artifact.
+    * Drop get() from the Bolts::Role::Locator interface. It provides nothing
+      useful in the way of functionality.
 
 0.143170  2014-11-13 10:22:18-06:00 America/Chicago
 

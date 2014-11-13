@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 18;
+use Test::More tests => 17;
 
 use Bolts::Util qw( locator_for );
 
@@ -81,8 +81,6 @@ is($locator->acquire('singleton_class')->id, 3);
 is($locator->acquire('singleton_class')->id, 3);
 is($locator->acquire('bag', 'class')->id, 4);
 is($locator->acquire('bag', 'class')->id, 5);
-
-ok(Moose::Util::TypeConstraints::find_or_create_isa_type_constraint('Foo')->equals(locator_for($locator->acquire('bag'))->get('class')->isa_type));
 
 eval {
     $locator->acquire('bag', 'bad_class');

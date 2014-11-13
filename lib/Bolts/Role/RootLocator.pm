@@ -179,19 +179,6 @@ sub resolve {
     return $item;
 }
 
-=head2 get
-
-    my $artifact = $log->get($component);
-
-Given a single symbol name as the path component to find during acquisition it returns the partial artifact for it. This artifact is incomplete and still needs to be resolved.
-
-=cut
-
-sub get {
-    my ($self, $component) = @_;
-    return $self->_get_from($self->root, $component);
-}
-
 sub _get_from {
     my ($self, $bag, $component, $current_path) = @_;
     $current_path //= '';

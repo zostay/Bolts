@@ -68,14 +68,4 @@ This method is called during each step of acquisition to resolve the artifact (w
 
 requires 'resolve';
 
-=head2 get
-
-    my $artifact = $log->get($component);
-
-Given a single symbol name as the path component to find during acquisition it returns the partial artifact for it. This artifact is incomplete and still needs to be resolved.
-
-=cut
-
-requires 'get';
-
 1;
