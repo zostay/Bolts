@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+0.143171  2014-11-13 14:03:30-06:00 America/Chicago
     
     * Interface Change: Bolts::Util::artifact() now returns an array of the form
       { $name => $artifact } rather than just $artifact.
