@@ -66,7 +66,7 @@ ok($locator);
 ok($locator->meta);
 
 my %artifacts = $locator->meta->list_artifacts;
-ok(scalar keys %artifacts, 5);
+is(scalar keys %artifacts, 5);
 isa_ok($artifacts{$_}, 'Bolts::Artifact') for qw(
     acquired literal class singleton_class
 );
