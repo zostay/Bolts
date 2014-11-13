@@ -144,13 +144,13 @@ sub acquire_all {
     }
     
     my $bag = $self->acquire(@path, $options);
-    if (ref $bag eq 'ARRAY') {
+    if ('ARRAY' eq ref $bag) {
         return [
             map { $self->resolve($bag, $_, $options) } @$bag
         ];
     }
 
-    elsif (ref $bag eq 'HASH') {
+    elsif ('HASH' eq ref $bag) {
         return [
             map { $self->resolve($bag, $_, $options) } values %$bag
         ];

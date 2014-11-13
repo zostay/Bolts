@@ -153,6 +153,7 @@ The purpose of the Bolts module itself is to provide some nice syntactic sugar f
     artifact 'name';
     artifact name => $value;
     artifact name => %options;
+    artifact name => $artifact;
 
 This defines an artifact in the current class. This will create a method on the current object with the given "name". If only the name is given, then the artifact to use must be passed when the bag is constructed.
 
@@ -161,7 +162,7 @@ This defines an artifact in the current class. This will create a method on the 
     my $value = $bag->acquire('name');
     say $value; # 42
 
-If a scalar or reference is passed in as a single argument in addition to the name, the artifact will be set to that literal value.
+If a scalar or reference is passed in as a single argument in addition to the name, the artifact will be set to that literal value unless the value is an object implementing L<Bolts::Role::Artifact>. In that latter case, the object itself becomes the artifact used.
 
 Otherwise, you may pass in a list of pairs, which will be interpreted depending on the keys present. Here is a list of keys and their meanings:
 
@@ -198,7 +199,7 @@ In addition to the options above, you may also specify the scope. This is usuall
 sub artifact {
     my $meta = _bag_meta(shift);
     my $artifact = Bolts::Util::artifact($meta, @_);
-    $meta->add_artifact($artifact->name, $artifact);
+    $meta->add_artifact(%$artifact);
     return;
 }
 

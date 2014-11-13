@@ -45,14 +45,16 @@ This provides some helpful utility methods for use with Bolts.
 
 =head2 artifact
 
-    my $artifact = artifact($bag, $name, %definition);
+    my %artifact = %{ artifact($bag, $name, %definition) };
 
     # For example:
-    my $artifact = artifact($bag, thing => ( class => 'MyApp::Thing' ) );
+    my %artifact = %{ artifact($bag, thing => ( class => 'MyApp::Thing' ) ) };
 
 This contains the internal implementation for building L<Bolt::Artifact> objects used by the sugar methods in L<Bolts> and L<Bolts::Role>. See the documentation L<there|Bolts/artifact> for more details on how to call it.
 
-The C<$bag> must be the metaclass or reference to which the artifact is being attached. The C<$name> is the name to give the artifact and teh C<%definition> is the remaineder of the definition.
+The C<$bag> must be the metaclass or reference to which the artifact is being attached. The C<$name> is the name to give the artifact and teh C<%definition> is the remainder of the definition.
+
+This function returns a hash with a single key, which is the name of the artifact. The value on that key is an object that implements L<Bolts::Role::Artifact>.
 
 =cut
 
@@ -101,8 +103,13 @@ sub artifact {
         );
     }
 
-    # One argument means it's a literal
+    # One argument means it's a literal or an artifact object
     elsif (@_ == 1) {
+
+        # If it is an artifact, just return it as is
+        return { $name => $_[0] }
+            if $_[0]->$_can('does') && $_[0]->$_does('Bolts::Role::Artifact');
+
         $blueprint_name = 'literal';
         $params{value} = $_[0];
     }
@@ -241,14 +248,16 @@ sub artifact {
 
     my $blueprint  = $meta->acquire('blueprint', $blueprint_name, \%params);
 
-    return Bolts::Artifact->new(
-        meta_locator => $meta,
-        name         => $name,
-        blueprint    => $blueprint,
-        scope        => $scope,
-        infer        => $infer,
-        injectors    => \@injectors,
-    );
+    return { 
+        $name => Bolts::Artifact->new(
+            meta_locator => $meta,
+            name         => $name,
+            blueprint    => $blueprint,
+            scope        => $scope,
+            infer        => $infer,
+            injectors    => \@injectors,
+        ),
+    };
 }
 
 =head2 locator_for

@@ -1,4 +1,9 @@
 {{$NEXT}}
+    
+    * Interface Change: Bolts::Util::artifact() now returns an array of the form
+      { $name => $artifact } rather than just $artifact.
+    * It is now possible to pass an artifact object (i.e., an object
+      implementing Bolts::Role::Artifact) as the definition of an artifact.
 
 0.143170  2014-11-13 10:22:18-06:00 America/Chicago
 
