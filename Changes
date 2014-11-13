@@ -1,5 +1,6 @@
 {{$NEXT}}
 
+    * Bugfix: The self() helper was missing from the Bolts package.
     * Adding Bolts:Util::artifact() as a generalized abstraction of the Bolts
       sugar (so it can be shared with Bolts::Role)
     * Fleshing out the artifacts accessor of Bolts::Meta::Class::Trait::Bag,

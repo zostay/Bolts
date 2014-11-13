@@ -419,6 +419,16 @@ sub value($) {
 
 Sets up a blueprint to return the artifact's parent.    
 
+=cut
+
+sub self() {
+    my ($meta, $value) = @_;
+
+    return {
+        blueprint => $meta->acquire('blueprint', 'parent_bag'),
+    };
+}
+
 =head1 GLOBALS
 
 =head2 $Bolts::GLOBAL_FALLBACK_META_LOCATOR
