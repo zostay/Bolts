@@ -113,7 +113,7 @@ sub acquire {
 
         my $bag = $item;
         $item = $self->_get_from($bag, $component, $current_path);
-        $item = $self->resolve($bag, $item, $options);
+        $item = $self->_resolve($bag, $item, $options);
 
         # If the $item is a locator, pass control of the process to that
         if (@path && $item->$_can('does') && $item->$_does('Bolts::Role::Locator')) {
@@ -146,13 +146,13 @@ sub acquire_all {
     my $bag = $self->acquire(@path, $options);
     if ('ARRAY' eq ref $bag) {
         return [
-            map { $self->resolve($bag, $_, $options) } @$bag
+            map { $self->_resolve($bag, $_, $options) } @$bag
         ];
     }
 
     elsif ('HASH' eq ref $bag) {
         return [
-            map { $self->resolve($bag, $_, $options) } values %$bag
+            map { $self->_resolve($bag, $_, $options) } values %$bag
         ];
     }
 
@@ -161,15 +161,7 @@ sub acquire_all {
     }
 }
 
-=head2 resolve
-
-    my $resolved_artifact = $loc->resolve($bag, $artifact, \%options);
-
-After the artifact has been found, this method resolves the a partial artifact implementing the L<Bolts::Role::Artifact> and turns it into the complete artifact.
-
-=cut
-
-sub resolve {
+sub _resolve {
     my ($self, $bag, $item, $options) = @_;
 
     return $item->get($bag, %$options)

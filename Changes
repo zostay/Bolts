@@ -1,13 +1,16 @@
 {{$NEXT}}
 
+    * Interface Change: Drop resolve() from the Bolts::Role::Locator interface.
+      It provides nothing useful outside of a locator.
+
 0.143171  2014-11-13 14:03:30-06:00 America/Chicago
     
     * Interface Change: Bolts::Util::artifact() now returns an array of the form
       { $name => $artifact } rather than just $artifact.
+    * Interface Change: Drop get() from the Bolts::Role::Locator interface. It
+      provides nothing useful in the way of functionality.
     * It is now possible to pass an artifact object (i.e., an object
       implementing Bolts::Role::Artifact) as the definition of an artifact.
-    * Drop get() from the Bolts::Role::Locator interface. It provides nothing
-      useful in the way of functionality.
 
 0.143170  2014-11-13 10:22:18-06:00 America/Chicago
 

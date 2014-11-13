@@ -56,16 +56,4 @@ The final argument is optional. As with L</acquire>, it is must be a hash refere
 
 requires 'acquire_all';
 
-=head2 resolve
-
-    my $resolved_artifact = $loc->resolve($bag, $artifact, \%options);
-
-After the artifact has been found, this method resolves the a partial artifact implementing the L<Bolts::Role::Artifact> and turns it into the complete artifact.
-
-This method is called during each step of acquisition to resolve the artifact (which might be a bag) at each step, including the final step. The given C<%options> are required. They are derefenced and passed to the L<Bolts::Role::Artifact/get> method, if the artifact being resolved implements L<Bolts::Role::Artifact>.
-
-=cut
-
-requires 'resolve';
-
 1;
