@@ -51,6 +51,48 @@ After it finds the artifact, it will resolve the artifact using the L</resolve> 
 
 When complete, the complete, resolved artifact found is returned.
 
+Acquisition in this implementation proceeds according to the following rules:
+
+=over
+
+=item 1.
+
+If the bag is an object:
+
+=over
+
+=item *
+
+If the object implements the L<Bolts::Role::Opaque> role, lookup will end in an error.
+
+=item *
+
+If the object implements the L<Bolts::Role::Locator> role, control of the lookup for the remaining components in C<@path> will pass over to that object.
+
+=item *
+
+If the C<can> method on the object returns false for the next component in C<@path>, lookup will end in an error.
+
+=item *
+
+Finally, the method named in the next component in C<@path> will be called and the result used as either the value to resolve or the next bag to locate within (repeating this process).
+
+=back
+
+=item 2.
+
+If the bag is a hash, the name of the next component in C<@path> will be used as a key in the hash to find the next value to resolve or the next bag to locate within.
+
+=item 3.
+
+If the bag is an array and the name of the next component in C<@path> is a number, it will be used as the index to fetch from the array to use as the value to resolve or the next bag to locate within.
+
+=item 4.
+
+Anything else will result in lookup ending in an error.
+
+=back
+
 =cut
 
 sub acquire {
@@ -72,6 +114,11 @@ sub acquire {
         my $bag = $item;
         $item = $self->_get_from($bag, $component, $current_path);
         $item = $self->resolve($bag, $item, $options);
+
+        # If the $item is a locator, pass control of the process to that
+        if (@path && $item->$_can('does') && $item->$_does('Bolts::Role::Locator')) {
+            $item->acquire(@path, $options);
+        }
 
         $current_path .= ' ' if $current_path;
         $current_path .= qq["$component"];
