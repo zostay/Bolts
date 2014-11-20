@@ -54,6 +54,24 @@ has such_that_does => (
     predicate   => 'has_such_that_does',
 );
 
+has __bag_meta => (
+    is          => 'rw',
+    required    => 1,
+    default     => sub { [] },
+    traits      => [ 'Array' ],
+    handles     => {
+        '_enter_bag'    => 'push',
+        '_exit_bag'     => 'pop',
+        '_has_bag_meta' => 'count',
+    },
+);
+
+sub _bag_meta {
+    my $self = shift;
+    return $self->__bag_meta->[-1] if $self->_has_bag_meta;
+    return $self;
+}
+
 =head1 METHODS
 
 =head2 is_finished_bag

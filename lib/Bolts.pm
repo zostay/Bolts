@@ -4,6 +4,8 @@ package Bolts;
 
 use Moose ();
 use Moose::Exporter;
+use Bolts;
+use Bolts::CommonSugar ();
 
 # Register attribute traits
 use Bolts::Meta::Attribute::Trait::Initializer;
@@ -37,10 +39,7 @@ Moose::Exporter->setup_import_methods(
         ],
     },
     base_class_roles => [ 'Bolts::Role::SelfLocator' ],
-    with_meta => [ qw(
-        artifact bag builder contains dep option self such_that_each value
-    ) ],
-    also => 'Moose',
+    also => [ 'Moose', 'Bolts::CommonSugar' ],
 );
 
 sub init_meta {
@@ -54,14 +53,6 @@ sub init_meta {
         lazy     => 1,
         weak_ref => 1,
     ));
-
-    return $meta;
-}
-
-sub _bag_meta {
-    my ($meta) = @_;
-
-    $meta = $BAG_META[-1] if @BAG_META;
 
     return $meta;
 }
@@ -194,15 +185,6 @@ In addition to the options above, you may also specify the scope. This is usuall
 
 =back
 
-=cut
-
-sub artifact {
-    my $meta = _bag_meta(shift);
-    my $artifact = Bolts::Util::artifact($meta, @_);
-    $meta->add_artifact(%$artifact);
-    return;
-}
-
 =head2 bag
 
     bag 'name' => contains {
@@ -210,72 +192,6 @@ sub artifact {
     };
 
 Attaches a bag at the named location. This provides tools for assembling complex IOC configurations.
-
-=cut
-
-our @BAG_OF_BUILDING;
-sub bag {
-    my ($meta, $name, $partial_def) = @_;
-
-    $meta = _bag_meta($meta);
-
-    my $def = $partial_def->($name);
-    $meta->add_artifact(
-        $name => Bolts::Artifact::Thunk->new(
-           thunk =>  sub { 
-                my ($self, $bag, $name, %params) = @_;
-                return $def->name->new( 
-                    __parent => $bag,
-                    %params,
-                );
-            },
-        )
-    );
-}
-
-sub contains(&;$) {
-    my ($parent_meta, $code, $such_that_each) = @_;
-
-    my $meta = _bag_meta($parent_meta);
-
-    return sub {
-        my ($name) = shift;
-
-        my $parent = $meta->name;
-
-        my $bag_meta = Bolts::Bag->start_bag(
-            package => "${parent}::$name",
-            ($such_that_each ? (such_that_each => $such_that_each) : ()),
-        );
-        push @BAG_META, $bag_meta;
-
-        $bag_meta->add_attribute(__parent => (
-            reader   => '__parent',
-            required => 1,
-            default  => sub { Carp::confess('why are we here?') },
-            weak_ref => 1,
-        ));
-
-        $bag_meta->add_artifact(
-            __top => Bolts::Artifact->new(
-                meta_locator => $bag_meta,
-                name         => '__top',
-                blueprint    => $bag_meta->acquire('blueprint', 'acquired', {
-                    path => [ '__parent', '__top' ],
-                }),
-                scope        => $bag_meta->acquire('scope', 'prototype'),
-            )
-        );
-
-        $code->($bag_meta);
-
-        pop @BAG_META;
-
-        $bag_meta->finish_bag;
-
-        return $bag_meta;
-    };
-}
 
 =head2 such_that_each
 
@@ -286,14 +202,7 @@ sub contains(&;$) {
         isa => 'Str',
     };
 
-Causes every artifact within the bag to have the same type constraints, which is handy in some cases. The first argument is a hash that may contain an C<isa> key and a C<does> key, which will be applid to each of the artifacts within. The second argument is the bag definition, which should be built using C<contains> as shown in the description of L</bag>.
-
-=cut
-
-sub such_that_each($) {
-    my ($meta, $params) = @_;
-    return $params;
-}
+Causes every artifact within the bag to have the same type constraints, which is handy in some cases. The first argument is a hash that may contain an C<isa> key and a C<does> key, which will be applied to each of the artifacts within. The second argument is the bag definition, which should be built using C<contains> as shown in the description of L</bag>.
 
 =head2 builder
 
@@ -308,19 +217,6 @@ sub such_that_each($) {
 
 This is a helper for setting a L<Bolts::Blueprint::BuiltInjector> for use in passing in a dependency that is wired directly to the builder function given.
 
-=cut
-
-sub builder(&) {
-    my ($meta, $code) = @_;
-    $meta = _bag_meta($meta);
-
-    return {
-        blueprint => $meta->acquire('blueprint', 'built_injector', {
-            builder => $code,
-        }),
-    };
-}
-
 =head2 dep
 
     artifact other => ( ... );
@@ -333,23 +229,6 @@ sub builder(&) {
     );
 
 This is a helper for laoding dependencies from a path in the current bag (or a bag within it).
-
-=cut
-
-sub dep($) {
-    my ($meta, $path) = @_;
-    $meta = _bag_meta($meta);
-
-    $path = [ $path ] unless ref $path eq 'ARRAY';
-
-    my @path = ('__top', @$path);
-
-    return {
-        blueprint => $meta->acquire('blueprint', 'acquired', {
-            path => \@path,
-        }),
-    };
-}
 
 =head2 option
 
@@ -368,23 +247,6 @@ sub dep($) {
 
 Helper to allow a dependency to be passed as a given option to the call to L<Bolts::Role::Locator/acquire>. To provide validators for the values pass, you may set the C<isa> and C<does> options to a L<Moose> type constraint. To make the option required, set the C<required> option.
 
-=cut
-
-sub option($) {
-    my ($meta, $p) = @_;
-
-    my %bp = %$p;
-    my %ip;
-    for my $k (qw( isa does )) {
-        $ip{$k} = delete $bp{$k} if exists $bp{$k};
-    }
-
-    return {
-        %ip,
-        blueprint => $meta->acquire('blueprint', 'given', \%bp),
-    },
-}
-
 =head2 value
 
     artifact name => (
@@ -397,18 +259,6 @@ sub option($) {
 Helper that passes a literal value through as a dependency to the artifact
 during injection.
 
-=cut
-
-sub value($) {
-    my ($meta, $value) = @_;
-
-    return {
-        blueprint => $meta->acquire('blueprint', 'literal', {
-            value => $value,
-        }),
-    };
-}
-
 =head2 self
 
     artifact thing => (
@@ -419,16 +269,6 @@ sub value($) {
     );
 
 Sets up a blueprint to return the artifact's parent.    
-
-=cut
-
-sub self() {
-    my ($meta, $value) = @_;
-
-    return {
-        blueprint => $meta->acquire('blueprint', 'parent_bag'),
-    };
-}
 
 =head1 GLOBALS
 
