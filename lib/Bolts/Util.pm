@@ -91,10 +91,17 @@ sub artifact {
     my $meta = shift;
     my $name = shift;
 
+    # EVEN MOAR EXPERIMENTAL
+    my $extends = 0;
+       $extends = 1 if $name =~ s/^\+//;
+
     # No arguments means it's acquired with given parameters
     my $blueprint_name;
     my %params;
     if (@_ == 0) {
+        Carp::croak("Extending artifact $name does not make sense.")
+            if $extends;
+
         $blueprint_name = 'acquired';
         $params{path}   = [ "__auto_$name" ];
         $meta->add_attribute("__auto_$name" =>

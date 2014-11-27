@@ -111,9 +111,10 @@ sub start_bag {
     my $package        = $params{package};
     my $meta_locator   = $params{meta_locator};
     my $such_that_each = $params{such_that_each};
+    my $extends        = $params{extends} // [];
 
     my $meta;
-    my %options = (superclasses => [ 'Moose::Object' ]);
+    my %options = (superclasses => [ 'Moose::Object', @$extends ]);
     if (defined $package) {
         $meta = Moose::Util::find_meta($package);
         if (defined $meta) {

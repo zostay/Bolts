@@ -10,15 +10,7 @@ with 'Bolts::Blueprint::Role::Injector';
 
     use Bolts;
 
-    # Using the usual sugar...
-    artifact thing => (
-        ...
-        parameters => {
-            parent => self,
-        },
-    );
-
-    # Or directly...
+    # Directly...
     my $meta = Bolts::Bag->start_bag;
 
     my $artifact = Bolts::Artifact->new(

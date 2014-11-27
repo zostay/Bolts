@@ -70,7 +70,7 @@ is(scalar keys %artifacts, 5);
 isa_ok($artifacts{$_}, 'Bolts::Artifact') for qw(
     acquired literal class singleton_class
 );
-isa_ok($artifacts{bag}, 'Bolts::Artifact::Thunk');
+isa_ok($artifacts{bag}, 'Bolts::Artifact');
 
 # Via the acquire method
 is($locator->acquire('acquired'), 'something');

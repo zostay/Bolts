@@ -4,7 +4,6 @@ package Bolts;
 
 use Moose ();
 use Moose::Exporter;
-use Bolts;
 use Bolts::CommonSugar ();
 
 # Register attribute traits

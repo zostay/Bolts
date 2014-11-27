@@ -4,7 +4,10 @@
       It provides nothing useful outside of a locator.
     * Bugfix: Eliminate a Odd number of elements warning when resolving sub-bags
       built with Bolts.
-    * Internal restructuring to prepare for the implementation of Bolts::Role.
+    * Internal restructuring to prepare for the implementation of Bolts::Role
+      and extensible bags and artifacts.
+    * Experimental: Use of +notation when defining bags and artifacts can be
+      used to extend the definitions of these.
 
 0.143171  2014-11-13 14:03:30-06:00 America/Chicago
     

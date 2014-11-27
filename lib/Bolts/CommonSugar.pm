@@ -19,18 +19,26 @@ sub artifact {
 sub bag {
     my ($meta, $name, $partial_def) = @_;
 
+    my $extends = 0;
+       $extends = 1 if $name =~ s/^\+//;
+
     $meta = $meta->_bag_meta;
 
     my $def = $partial_def->($name);
     $meta->add_artifact(
-        $name => Bolts::Artifact::Thunk->new(
-           thunk =>  sub { 
-                my ($self, $bag, %params) = @_;
-                return $def->name->new( 
-                    __parent => $bag,
-                    %params,
-                );
-            },
+        $name => Bolts::Artifact->new(
+            name      => $name,
+            blueprint => $meta->acquire('blueprint', 'factory', {
+                class     => $def->name,
+            }),
+            injectors => [
+                $meta->acquire('injector', 'parameter_name', {
+                    key       => '__parent',
+                    blueprint => $meta->acquire('blueprint', 'parent_bag'),
+                }),
+            ],
+            infer => 'options',
+            scope => $meta->acquire('scope', 'singleton'),
         )
     );
 }
