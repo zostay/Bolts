@@ -74,6 +74,32 @@ sub _bag_meta {
 
 =head1 METHODS
 
+=head2 get_all_artifacts
+
+    my %artifacts = $meta->get_all_artifacts;
+
+Traverses the inheritance tree and returns a map to all the artifacts that have been defined using L</add_artifact>.
+
+B<Note:> It is possible that other artifacts have been defined as methods could still be acquired via a locator.
+
+=cut
+
+sub get_all_artifacts {
+    my $self = shift;
+
+    my %artifacts;
+    for my $class ($self->linearized_isa) {
+        my $meta = Moose::Util::find_meta($class);
+
+        if ($meta->$_can('artifacts')) {
+            $artifacts{$_} //= $meta->artifacts->{$_}
+                for keys %{ $meta->artifacts // {} };
+        }
+    }
+
+    return %artifacts;
+}
+
 =head2 is_finished_bag
 
     my $finished = $meta->is_finished_bag;

@@ -24,7 +24,11 @@ sub bag {
 
     $meta = $meta->_bag_meta;
 
-    my $def = $partial_def->($name);
+    my $def = $partial_def->(
+        name    => $name,
+        extends => $extends,
+    );
+
     $meta->add_artifact(
         $name => Bolts::Artifact->new(
             name      => $name,
@@ -49,12 +53,35 @@ sub contains(&;$) {
     my $meta = $parent_meta->_bag_meta;
 
     return sub {
-        my ($name) = shift;
+        my (%params) = @_;
 
-        my $parent = $meta->name;
+        my $name    = $params{name};
+        my $extends = $params{extends};
+
+        my $parent  = $meta->name;
+
+        my @superclass;
+        if ($extends) {
+            my %artifacts = $meta->get_all_artifacts;
+            my $extend_artifact = $artifacts{$name};
+
+            Carp::croak("Cannot extend bag +$name: No such bag defined in parent")
+                unless defined $extend_artifact;
+
+            # TODO This is *very* specific. It would be nice to
+            # extrapolate into a more general solution.
+            #
+            # Also, just because the factory calls a class method on a given
+            # class does not mean it returns an object of that class.
+            Carp::croak("Cannot extend bag +$name: Unable to determine class of bag")
+                unless $extend_artifact->blueprint->isa('Bolts::Blueprint::Factory');
+
+            @superclass = ($extend_artifact->blueprint->class);
+        }
 
         my $bag_meta = Bolts::Bag->start_bag(
             package => "${parent}::$name",
+            extends => \@superclass,
             ($such_that_each ? (such_that_each => $such_that_each) : ()),
         );
         $parent_meta->_enter_bag($bag_meta);
