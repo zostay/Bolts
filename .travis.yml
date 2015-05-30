@@ -9,6 +9,6 @@ before_install:
   - dzil authordeps | cpanm --notest --quiet
   - cpanm --notest --quiet Pod::Coverage::TrustPod
 install:
-  - dzil listdeps | cpanm --notest
+  - dzil listdeps | cpanm --notest --quiet
 script:
   - dzil test --release --verbose
