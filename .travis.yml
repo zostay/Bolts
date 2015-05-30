@@ -5,8 +5,8 @@ perl:
   - "5.16"
   - "5.14"
 before_install:
-  - cpanm --notest Dist::Zilla
-  - dzil authordeps | cpanm --notest
+  - cpanm --notest --quiet Dist::Zilla
+  - dzil authordeps | cpanm --notest --quiet
 install:
   - dzil listdeps | cpanm --notest
 script:
