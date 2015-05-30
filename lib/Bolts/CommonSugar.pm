@@ -195,4 +195,6 @@ sub self() {
 
 =end Pod::Coverage
 
+=cut
+
 1;
