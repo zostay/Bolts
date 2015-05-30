@@ -181,4 +181,18 @@ sub self() {
     };
 }
 
+=begin Pod::Coverage
+
+    artifact
+    bag
+    builder
+    contains
+    dep
+    option
+    self
+    such_that_each
+    value
+
+=end Pod::Coverage
+
 1;
