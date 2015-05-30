@@ -7,7 +7,8 @@ perl:
 before_install:
   - cpanm --notest --quiet Dist::Zilla
   - dzil authordeps | cpanm --notest --quiet
+  - cpanm --notest --quiet Pod::Coverage::TrustPod
 install:
   - dzil listdeps | cpanm --notest
 script:
-  - dzil test --release
+  - dzil test --release --verbose
